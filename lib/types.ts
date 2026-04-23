@@ -1,4 +1,4 @@
-export type PlanCode = 'free' | 'starter' | 'pro';
+export type PlanCode = 'free' | 'pro' | 'enterprise';
 
 export interface Plan {
   code: PlanCode;

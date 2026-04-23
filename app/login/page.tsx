@@ -10,11 +10,10 @@ export default function LoginPage() {
       <div className="card" style={{ maxWidth: 520 }}>
         <h1 style={{ marginTop: 0 }}>Sign in</h1>
         <p className="small">
-          OIDC authorization code flow. Access token is kept in memory only (demo: dev-token),
-          which reduces client-side leakage risk.
+          Sign in to your account to upload PDF files, track conversion progress, and download DOCX results.
         </p>
         {oidcUrl ? (
-          <a className="btn btn-primary" href={oidcUrl}>Start OIDC sign-in</a>
+          <a className="btn btn-primary" href={oidcUrl}>Continue to sign in</a>
         ) : (
           <p className="small">Set NEXT_PUBLIC_OIDC_AUTH_URL and NEXT_PUBLIC_OIDC_CLIENT_ID.</p>
         )}

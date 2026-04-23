@@ -10,17 +10,19 @@ interface UploadInitResponse {
   storage_key: string;
 }
 
+type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
+
 export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | void }) {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string>('');
   const [isBusy, setIsBusy] = useState(false);
-  const [stage, setStage] = useState<'idle' | 'uploading' | 'processing'>('idle');
+  const [stage, setStage] = useState<UploadStage>('idle');
 
   async function handleUpload() {
     if (!file) return;
     setIsBusy(true);
     setStage('uploading');
-    setMessage('');
+    setMessage('Uploading your PDF...');
     try {
       const token = await getAccessToken();
       const init = await apiFetch<UploadInitResponse>(
@@ -59,10 +61,11 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
       );
 
       if (!uploadResponse.ok) {
-        throw new Error('Upload failed.');
+        throw new Error('Upload failed. Please try again.');
       }
 
       setStage('processing');
+      setMessage('Processing started. Your DOCX will appear in recent conversions when ready.');
       await apiFetch(
         `/documents/${init.document_id}/process`,
         {
@@ -72,13 +75,12 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
         token
       );
 
-      setMessage(`File uploaded and processing started. Document ID: ${init.document_id}`);
-      setStage('idle');
+      setStage('completed');
       setFile(null);
       await onComplete?.();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unknown error occurred.');
-      setStage('idle');
+      setMessage(error instanceof Error ? error.message : 'Conversion failed.');
+      setStage('failed');
     } finally {
       setIsBusy(false);
     }
@@ -86,8 +88,8 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
 
   return (
     <div className="card">
-      <h2 className="section-title">PDF upload</h2>
-      <p className="small">The file is uploaded directly to private storage via signed URL. Tokens are never saved to localStorage.</p>
+      <h2 className="section-title">Upload PDF</h2>
+      <p className="small">Select a PDF file to convert it into an editable DOCX document.</p>
       <div className="dropzone mt-16">
         <input
           className="input"
@@ -97,15 +99,17 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
         />
       </div>
       <button className="btn btn-primary mt-16" onClick={handleUpload} disabled={!file || isBusy}>
-        {isBusy ? 'Uploading...' : 'Upload and process'}
+        {isBusy ? 'Working...' : 'Convert to DOCX'}
       </button>
       {isBusy ? (
         <div className="processing-indicator" aria-live="polite" aria-busy="true">
           <span className="spinner" />
-          <span>{stage === 'processing' ? 'Processing…' : 'Uploading…'}</span>
+          <span>{stage === 'processing' ? 'Processing' : 'Uploading'}</span>
         </div>
       ) : null}
       {message ? <p className="small mt-16">{message}</p> : null}
+      {stage === 'completed' ? <p className="small">Status: completed</p> : null}
+      {stage === 'failed' ? <p className="small" style={{ color: 'var(--danger)' }}>Status: failed</p> : null}
     </div>
   );
 }

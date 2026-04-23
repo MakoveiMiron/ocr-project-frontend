@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { apiFetch, apiFetchRaw } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -51,36 +51,17 @@ export default function DocumentDetailPage() {
     void maybeDownload();
   }, [document?.original_filename, documentId, searchParams]);
 
-  const retentionLabel = useMemo(() => {
-    if (!document?.retention_deadline) return 'Not set';
-    const deadline = new Date(document.retention_deadline);
-    const diffMs = deadline.getTime() - Date.now();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return `Expired (${Math.abs(diffDays)} days ago)`;
-    return `Expires in ${diffDays} days`;
-  }, [document?.retention_deadline]);
-
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card">
-        <h1 style={{ marginTop: 0 }}>Document status</h1>
+        <h1 style={{ marginTop: 0 }}>Conversion status</h1>
         {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
         {!document ? <p className="small">Loading...</p> : (
           <div className="grid" style={{ gap: 12 }}>
-            <p className="small"><strong>Filename:</strong> {document.original_filename}</p>
+            <p className="small"><strong>File:</strong> {document.original_filename}</p>
             <p className="small"><strong>Status:</strong> {document.status}</p>
-            <p className="small"><strong>Current step:</strong> {document.latest_job?.current_step ?? '-'}</p>
-            <p className="small"><strong>Job status:</strong> {document.latest_job?.status ?? '-'}</p>
-            <p className="small"><strong>Blocks:</strong> {document.block_count ?? '-'}</p>
-            <p className="small"><strong>Retention:</strong> {retentionLabel}</p>
-            <p className="small"><strong>Cleanup status:</strong> {document.cleanup_status ?? '-'}</p>
-            <p className="small"><strong>DOCX available:</strong> {document.docx_available ? 'yes' : 'no'}</p>
-            <details>
-              <summary className="small">Complexity and routing decisions</summary>
-              <pre className="small" style={{ whiteSpace: 'pre-wrap' }}>
-                {JSON.stringify({ complexity: document.complexity_results, routing: document.ocr_routing_decisions }, null, 2)}
-              </pre>
-            </details>
+            <p className="small"><strong>OCR step:</strong> {document.latest_job?.current_step ?? '-'}</p>
+            <p className="small"><strong>DOCX ready:</strong> {document.docx_available ? 'Yes' : 'No'}</p>
           </div>
         )}
       </div>
