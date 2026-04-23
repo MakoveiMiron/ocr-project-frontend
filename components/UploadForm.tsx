@@ -10,7 +10,7 @@ interface UploadInitResponse {
   storage_key: string;
 }
 
-export function UploadForm() {
+export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | void }) {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string>('');
   const [isBusy, setIsBusy] = useState(false);
@@ -72,8 +72,10 @@ export function UploadForm() {
         token
       );
 
-      setMessage('A fájl feltöltve, feldolgozás elindítva.');
+      setMessage(`A fájl feltöltve, feldolgozás elindítva. Dokumentum azonosító: ${init.document_id}`);
       setStage('idle');
+      setFile(null);
+      await onComplete?.();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Ismeretlen hiba történt.');
       setStage('idle');
@@ -85,7 +87,7 @@ export function UploadForm() {
   return (
     <div className="card">
       <h2 style={{ marginTop: 0 }}>PDF feltöltés</h2>
-      <p className="small">A fájl közvetlenül aláírt URL-en megy a privát tárhelyre.</p>
+      <p className="small">A fájl közvetlenül aláírt URL-en megy a privát tárhelyre. Token soha nem kerül localStorage-ba.</p>
       <div className="dropzone" style={{ marginTop: 16 }}>
         <input
           className="input"
