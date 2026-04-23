@@ -86,9 +86,9 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
 
   return (
     <div className="card">
-      <h2 style={{ marginTop: 0 }}>PDF feltöltés</h2>
+      <h2 className="section-title">PDF feltöltés</h2>
       <p className="small">A fájl közvetlenül aláírt URL-en megy a privát tárhelyre. Token soha nem kerül localStorage-ba.</p>
-      <div className="dropzone" style={{ marginTop: 16 }}>
+      <div className="dropzone mt-16">
         <input
           className="input"
           type="file"
@@ -96,7 +96,7 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
       </div>
-      <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={handleUpload} disabled={!file || isBusy}>
+      <button className="btn btn-primary mt-16" onClick={handleUpload} disabled={!file || isBusy}>
         {isBusy ? 'Feltöltés...' : 'Feltöltés és feldolgozás'}
       </button>
       {isBusy ? (
@@ -105,7 +105,7 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
           <span>{stage === 'processing' ? 'Feldolgozás alatt…' : 'Feltöltés alatt…'}</span>
         </div>
       ) : null}
-      {message ? <p className="small" style={{ marginTop: 12 }}>{message}</p> : null}
+      {message ? <p className="small mt-16">{message}</p> : null}
     </div>
   );
 }

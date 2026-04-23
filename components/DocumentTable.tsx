@@ -4,7 +4,7 @@ import { DocumentSummary } from '@/lib/types';
 export function DocumentTable({ documents }: { documents: DocumentSummary[] }) {
   return (
     <div className="card">
-      <h2 style={{ marginTop: 0 }}>Dokumentumok</h2>
+      <h2 className="section-title">Dokumentumok</h2>
       <table className="table">
         <thead>
           <tr>
@@ -20,7 +20,7 @@ export function DocumentTable({ documents }: { documents: DocumentSummary[] }) {
               <td>{doc.original_filename}</td>
               <td>{doc.status}</td>
               <td><code>{doc.id.slice(0, 8)}…</code></td>
-              <td style={{ display: 'flex', gap: 8 }}>
+              <td className="actions-row">
                 <Link className="btn btn-secondary" href={`/documents/${doc.id}`}>Státusz</Link>
                 <Link className="btn btn-secondary" href={`/documents/${doc.id}?download=1`}>DOCX</Link>
               </td>
