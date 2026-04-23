@@ -9,7 +9,7 @@ export function Hero() {
         Strukturális elemzés, intelligens OCR-routing és Word-visszaépítés egy több-bérlős,
         előfizetéses rendszerben.
       </p>
-      <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+      <div className="actions-row mt-16">
         <Link className="btn btn-primary" href="/dashboard">Megnyitás</Link>
         <Link className="btn btn-secondary" href="/pricing">Csomagok</Link>
       </div>

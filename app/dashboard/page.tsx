@@ -56,9 +56,9 @@ export default function DashboardPage() {
       <div className="grid grid-2">
         <UploadForm onComplete={loadDashboard} />
         <div className="card">
-          <h2 style={{ marginTop: 0 }}>Szervezet és billing</h2>
+          <h2 className="section-title">Szervezet és billing</h2>
           <p className="small">Állítsd be a szervezetet, kezeld a tagokat és az előfizetést adatvédelmi kontrollokkal.</p>
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div className="stack-sm">
             <Link className="btn btn-secondary" href="/organizations/register">Szervezet regisztráció</Link>
             <Link className="btn btn-secondary" href="/members">Tagok kezelése</Link>
             <Link className="btn btn-secondary" href="/pricing">Csomagváltás / checkout</Link>
