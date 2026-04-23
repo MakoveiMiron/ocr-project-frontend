@@ -18,7 +18,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self'",
-              "connect-src 'self' http://localhost:8000",
+              "connect-src 'self' http://localhost:8000 https://web-production-3a8489.up.railway.app",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'"
