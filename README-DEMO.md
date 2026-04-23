@@ -14,8 +14,10 @@ npm run dev
 Ha a külön backendhez akarod kötni:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://a-backended.up.railway.app/api/v1
+API_BASE_URL=https://a-backended.up.railway.app/api/v1
 ```
+
+A böngészős hívások a beépített Next.js proxy-n (`/api/v1/*`) mennek át, így nem a frontend okoz CORS hibát.
 
 ## Javasolt használat
 - landing oldal
