@@ -19,7 +19,7 @@ export default function DocumentDetailPage() {
         const detail = await apiFetch<DocumentDetail>(`/documents/${documentId}`, undefined, token);
         setDocument(detail);
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'Státusz lekérés sikertelen.');
+        setMessage(error instanceof Error ? error.message : 'Failed to fetch status.');
       }
     }
 
@@ -44,7 +44,7 @@ export default function DocumentDetailPage() {
         link.remove();
         URL.revokeObjectURL(url);
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'A letöltés nem sikerült.');
+        setMessage(error instanceof Error ? error.message : 'Download failed.');
       }
     }
 
@@ -52,31 +52,31 @@ export default function DocumentDetailPage() {
   }, [document?.original_filename, documentId, searchParams]);
 
   const retentionLabel = useMemo(() => {
-    if (!document?.retention_deadline) return 'Nincs megadva';
+    if (!document?.retention_deadline) return 'Not set';
     const deadline = new Date(document.retention_deadline);
     const diffMs = deadline.getTime() - Date.now();
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return `Lejárt (${Math.abs(diffDays)} napja)`;
-    return `${diffDays} nap múlva jár le`;
+    if (diffDays < 0) return `Expired (${Math.abs(diffDays)} days ago)`;
+    return `Expires in ${diffDays} days`;
   }, [document?.retention_deadline]);
 
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card">
-        <h1 style={{ marginTop: 0 }}>Dokumentum státusz</h1>
+        <h1 style={{ marginTop: 0 }}>Document status</h1>
         {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
-        {!document ? <p className="small">Betöltés...</p> : (
+        {!document ? <p className="small">Loading...</p> : (
           <div className="grid" style={{ gap: 12 }}>
-            <p className="small"><strong>Fájlnév:</strong> {document.original_filename}</p>
-            <p className="small"><strong>Állapot:</strong> {document.status}</p>
-            <p className="small"><strong>Aktuális lépés:</strong> {document.latest_job?.current_step ?? '-'}</p>
-            <p className="small"><strong>Job státusz:</strong> {document.latest_job?.status ?? '-'}</p>
-            <p className="small"><strong>Blokkok:</strong> {document.block_count ?? '-'}</p>
+            <p className="small"><strong>Filename:</strong> {document.original_filename}</p>
+            <p className="small"><strong>Status:</strong> {document.status}</p>
+            <p className="small"><strong>Current step:</strong> {document.latest_job?.current_step ?? '-'}</p>
+            <p className="small"><strong>Job status:</strong> {document.latest_job?.status ?? '-'}</p>
+            <p className="small"><strong>Blocks:</strong> {document.block_count ?? '-'}</p>
             <p className="small"><strong>Retention:</strong> {retentionLabel}</p>
-            <p className="small"><strong>Cleanup státusz:</strong> {document.cleanup_status ?? '-'}</p>
-            <p className="small"><strong>DOCX elérhető:</strong> {document.docx_available ? 'igen' : 'nem'}</p>
+            <p className="small"><strong>Cleanup status:</strong> {document.cleanup_status ?? '-'}</p>
+            <p className="small"><strong>DOCX available:</strong> {document.docx_available ? 'yes' : 'no'}</p>
             <details>
-              <summary className="small">Komplexitás és routing döntések</summary>
+              <summary className="small">Complexity and routing decisions</summary>
               <pre className="small" style={{ whiteSpace: 'pre-wrap' }}>
                 {JSON.stringify({ complexity: document.complexity_results, routing: document.ocr_routing_decisions }, null, 2)}
               </pre>

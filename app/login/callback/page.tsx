@@ -4,7 +4,8 @@ export default function LoginCallbackPage() {
       <div className="card" style={{ maxWidth: 680 }}>
         <h1 style={{ marginTop: 0 }}>OIDC callback</h1>
         <p className="small">
-          Itt kezeld a code cserét backend oldalon (PKCE + token exchange), majd secure cookie-ba állíts sessiont.
+          Handle code exchange on the backend here (PKCE + token exchange), then set a secure
+          cookie-based session.
         </p>
       </div>
     </section>

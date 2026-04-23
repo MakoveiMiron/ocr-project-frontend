@@ -19,7 +19,7 @@ export default function MembersPage() {
         setOrganization(org);
         setMembers(memberList);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Taglista betöltése sikertelen.');
+        setError(err instanceof Error ? err.message : 'Failed to load members.');
       }
     }
 
@@ -29,15 +29,15 @@ export default function MembersPage() {
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card">
-        <h1 style={{ marginTop: 0 }}>Szervezeti tagok</h1>
-        <p className="small">Szervezet: {organization?.name ?? '-'}</p>
+        <h1 style={{ marginTop: 0 }}>Organization members</h1>
+        <p className="small">Organization: {organization?.name ?? '-'}</p>
         {error ? <p className="small" style={{ color: 'var(--danger)' }}>{error}</p> : null}
         <table className="table">
           <thead>
             <tr>
-              <th>Név</th>
+              <th>Name</th>
               <th>Email</th>
-              <th>Szerepkör</th>
+              <th>Role</th>
               <th>User ID</th>
             </tr>
           </thead>

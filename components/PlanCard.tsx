@@ -21,7 +21,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
       const response = await apiFetch<CheckoutResponse>(`/billing/checkout/${plan.code}`, { method: 'POST' }, token);
       window.location.href = response.checkout_url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Checkout indítása sikertelen.');
+      setError(err instanceof Error ? err.message : 'Failed to start checkout.');
     } finally {
       setBusy(false);
     }
@@ -35,7 +35,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
         {plan.limits.map((limit) => <li key={limit}>{limit}</li>)}
       </ul>
       <button className="btn btn-primary" style={{ marginTop: 16, width: '100%' }} onClick={handleSelectPlan} disabled={busy}>
-        {busy ? 'Betöltés...' : 'Választom'}
+        {busy ? 'Loading...' : 'Choose plan'}
       </button>
       {error ? <p className="small" style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p> : null}
     </div>
