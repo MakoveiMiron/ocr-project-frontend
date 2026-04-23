@@ -1,38 +1,74 @@
+'use client';
+
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DocumentTable } from '@/components/DocumentTable';
 import { UploadForm } from '@/components/UploadForm';
-
-const sampleDocs = [
-  { id: '1f13d998-1111-2222-3333-aabbccddeeff', original_filename: 'szerzodes.pdf', status: 'completed' },
-  { id: '2f13d998-1111-2222-3333-aabbccddeeff', original_filename: 'ajanlat.pdf', status: 'processing' }
-];
+import { apiFetch } from '@/lib/api';
+import { getAccessToken } from '@/lib/auth';
+import { DocumentSummary, OrganizationSummary } from '@/lib/types';
 
 export default function DashboardPage() {
+  const [organization, setOrganization] = useState<OrganizationSummary | null>(null);
+  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      const token = await getAccessToken();
+      const [org, docs] = await Promise.all([
+        apiFetch<OrganizationSummary>('/organizations/me', undefined, token),
+        apiFetch<DocumentSummary[]>('/documents/', undefined, token)
+      ]);
+      setOrganization(org);
+      setDocuments(docs);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nem sikerült az adatok lekérése.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+    const interval = setInterval(() => void loadDashboard(), 10000);
+    return () => clearInterval(interval);
+  }, [loadDashboard]);
+
+  const activeJobs = useMemo(
+    () => documents.filter((doc) => !['completed', 'failed', 'expired'].includes(doc.status)).length,
+    [documents]
+  );
+
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="kpis" style={{ marginBottom: 16 }}>
-        <div className="kpi"><span className="small">Csomag</span><strong>Pro</strong></div>
-        <div className="kpi"><span className="small">Havi keret</span><strong>10 000</strong></div>
-        <div className="kpi"><span className="small">Feldolgozott</span><strong>1 284</strong></div>
-        <div className="kpi"><span className="small">Aktív jobok</span><strong>3</strong></div>
+        <div className="kpi"><span className="small">Szervezet</span><strong>{organization?.name ?? (loading ? 'Betöltés...' : '-')}</strong></div>
+        <div className="kpi"><span className="small">Szerepkör</span><strong>{organization?.role ?? '-'}</strong></div>
+        <div className="kpi"><span className="small">Dokumentumok</span><strong>{documents.length}</strong></div>
+        <div className="kpi"><span className="small">Aktív jobok</span><strong>{activeJobs}</strong></div>
       </div>
 
+      {error ? <p className="small" style={{ color: 'var(--danger)' }}>{error}</p> : null}
+
       <div className="grid grid-2">
-        <UploadForm />
+        <UploadForm onComplete={loadDashboard} />
         <div className="card">
-          <h2 style={{ marginTop: 0 }}>Feldolgozási szabály</h2>
-          <p className="small">
-            Először szerkezeti elemzés fut, utána a rendszer oldal/szekció szinten eldönti,
-            hogy Document AI vagy Textract OCR legyen használva.
-          </p>
-          <p className="small">
-            A visszaépítés egy normalizált köztes JSON alapján készül, így a Word export
-            egységes marad több OCR-motor mellett is.
-          </p>
+          <h2 style={{ marginTop: 0 }}>Szervezet és billing</h2>
+          <p className="small">Állítsd be a szervezetet, kezeld a tagokat és az előfizetést adatvédelmi kontrollokkal.</p>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <Link className="btn btn-secondary" href="/organizations/register">Szervezet regisztráció</Link>
+            <Link className="btn btn-secondary" href="/members">Tagok kezelése</Link>
+            <Link className="btn btn-secondary" href="/pricing">Csomagváltás / checkout</Link>
+            <Link className="btn btn-secondary" href="/admin/webhooks">Webhook admin</Link>
+          </div>
         </div>
       </div>
 
       <div style={{ marginTop: 16 }}>
-        <DocumentTable documents={sampleDocs} />
+        <DocumentTable documents={documents} />
       </div>
     </section>
   );
