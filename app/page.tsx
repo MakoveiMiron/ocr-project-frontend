@@ -10,13 +10,14 @@ export default function HomePage() {
           <div className="card">
             <h2 className="section-title">Demo frontend</h2>
             <p className="small">
-              Ez a felület bemutató célra készült. A valódi backend külön szolgáltatásként deployolható, ez a frontend pedig a folyamat és az UI demonstrálására szolgál.
+              This interface is built for demo purposes. The real backend can be deployed as a separate
+              service, while this frontend demonstrates the user flow and UI.
             </p>
           </div>
           <div className="card">
-            <h2 className="section-title">Mire való ez a csomag?</h2>
+            <h2 className="section-title">What is this package for?</h2>
             <p className="small">
-              Elsősorban demo, pitch, UI preview és későbbi továbbfejlesztés alapjaként használható.
+              It is primarily useful for demos, pitches, UI previews, and as a base for further development.
             </p>
           </div>
         </div>

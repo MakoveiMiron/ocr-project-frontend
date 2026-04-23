@@ -10,20 +10,20 @@ const plans: Plan[] = [
   {
     code: 'free',
     name: 'Free',
-    priceLabel: '0 € / hó',
-    limits: ['50 oldal / hó', '10 MB fájlméret', 'Document AI alap routing']
+    priceLabel: '€0 / month',
+    limits: ['50 pages / month', '10 MB file size', 'Document AI basic routing']
   },
   {
     code: 'starter',
     name: 'Starter',
-    priceLabel: '49 € / hó',
-    limits: ['1 000 oldal / hó', '50 MB fájlméret', 'Textract használat is']
+    priceLabel: '€49 / month',
+    limits: ['1,000 pages / month', '50 MB file size', 'Includes Textract support']
   },
   {
     code: 'pro',
     name: 'Pro',
-    priceLabel: '199 € / hó',
-    limits: ['10 000 oldal / hó', '200 MB fájlméret', 'prioritásos feldolgozás']
+    priceLabel: '€199 / month',
+    limits: ['10,000 pages / month', '200 MB file size', 'Priority processing']
   }
 ];
 
@@ -40,16 +40,16 @@ export default function PricingPage() {
       const response = await apiFetch<BillingPortalResponse>('/billing/portal', { method: 'POST' }, token);
       window.location.href = response.portal_url;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Portal megnyitása sikertelen.');
+      setMessage(error instanceof Error ? error.message : 'Failed to open billing portal.');
     }
   }
 
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card" style={{ marginBottom: 16 }}>
-        <h1 style={{ marginTop: 0 }}>Előfizetési csomagok</h1>
-        <p className="small">A backend entitlement alapon kezeli a hozzáférést és a limiteket.</p>
-        <button className="btn btn-secondary" onClick={openPortal}>Stripe billing portal</button>
+        <h1 style={{ marginTop: 0 }}>Subscription plans</h1>
+        <p className="small">Backend entitlements control access and plan limits.</p>
+        <button className="btn btn-secondary" onClick={openPortal}>Open Stripe billing portal</button>
         {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
       </div>
       <div className="grid grid-3">

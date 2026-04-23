@@ -1,5 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export const metadata = {
   title: 'PDF OCR SaaS',
@@ -8,7 +9,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="hu">
+    <html lang="en" data-theme="light">
       <body>
         <div className="container">
           <nav className="topnav">
@@ -16,9 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="links">
               <Link href="/">Home</Link>
               <Link href="/dashboard">Dashboard</Link>
-              <Link href="/pricing">Csomagok</Link>
-              <Link href="/members">Tagok</Link>
-              <Link href="/login" className="btn btn-secondary">Belépés</Link>
+              <Link href="/pricing">Plans</Link>
+              <Link href="/members">Members</Link>
+              <ThemeToggle />
+              <Link href="/login" className="btn btn-secondary">Sign in</Link>
             </div>
           </nav>
         </div>

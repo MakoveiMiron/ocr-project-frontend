@@ -2,8 +2,8 @@ export default function BillingCancelPage() {
   return (
     <section className="container">
       <div className="card">
-        <h1 style={{ marginTop: 0 }}>Fizetés megszakítva</h1>
-        <p className="small">Bármikor visszatérhetsz és kiválaszthatsz másik csomagot.</p>
+        <h1 style={{ marginTop: 0 }}>Payment canceled</h1>
+        <p className="small">You can come back anytime and choose a different plan.</p>
       </div>
     </section>
   );

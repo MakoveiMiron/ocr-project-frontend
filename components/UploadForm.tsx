@@ -59,7 +59,7 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
       );
 
       if (!uploadResponse.ok) {
-        throw new Error('A feltöltés nem sikerült.');
+        throw new Error('Upload failed.');
       }
 
       setStage('processing');
@@ -72,12 +72,12 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
         token
       );
 
-      setMessage(`A fájl feltöltve, feldolgozás elindítva. Dokumentum azonosító: ${init.document_id}`);
+      setMessage(`File uploaded and processing started. Document ID: ${init.document_id}`);
       setStage('idle');
       setFile(null);
       await onComplete?.();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Ismeretlen hiba történt.');
+      setMessage(error instanceof Error ? error.message : 'Unknown error occurred.');
       setStage('idle');
     } finally {
       setIsBusy(false);
@@ -86,8 +86,8 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
 
   return (
     <div className="card">
-      <h2 className="section-title">PDF feltöltés</h2>
-      <p className="small">A fájl közvetlenül aláírt URL-en megy a privát tárhelyre. Token soha nem kerül localStorage-ba.</p>
+      <h2 className="section-title">PDF upload</h2>
+      <p className="small">The file is uploaded directly to private storage via signed URL. Tokens are never saved to localStorage.</p>
       <div className="dropzone mt-16">
         <input
           className="input"
@@ -97,12 +97,12 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
         />
       </div>
       <button className="btn btn-primary mt-16" onClick={handleUpload} disabled={!file || isBusy}>
-        {isBusy ? 'Feltöltés...' : 'Feltöltés és feldolgozás'}
+        {isBusy ? 'Uploading...' : 'Upload and process'}
       </button>
       {isBusy ? (
         <div className="processing-indicator" aria-live="polite" aria-busy="true">
           <span className="spinner" />
-          <span>{stage === 'processing' ? 'Feldolgozás alatt…' : 'Feltöltés alatt…'}</span>
+          <span>{stage === 'processing' ? 'Processing…' : 'Uploading…'}</span>
         </div>
       ) : null}
       {message ? <p className="small mt-16">{message}</p> : null}

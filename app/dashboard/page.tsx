@@ -25,7 +25,7 @@ export default function DashboardPage() {
       setDocuments(docs);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nem sikerült az adatok lekérése.');
+      setError(err instanceof Error ? err.message : 'Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -45,10 +45,10 @@ export default function DashboardPage() {
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="kpis" style={{ marginBottom: 16 }}>
-        <div className="kpi"><span className="small">Szervezet</span><strong>{organization?.name ?? (loading ? 'Betöltés...' : '-')}</strong></div>
-        <div className="kpi"><span className="small">Szerepkör</span><strong>{organization?.role ?? '-'}</strong></div>
-        <div className="kpi"><span className="small">Dokumentumok</span><strong>{documents.length}</strong></div>
-        <div className="kpi"><span className="small">Aktív jobok</span><strong>{activeJobs}</strong></div>
+        <div className="kpi"><span className="small">Organization</span><strong>{organization?.name ?? (loading ? 'Loading...' : '-')}</strong></div>
+        <div className="kpi"><span className="small">Role</span><strong>{organization?.role ?? '-'}</strong></div>
+        <div className="kpi"><span className="small">Documents</span><strong>{documents.length}</strong></div>
+        <div className="kpi"><span className="small">Active jobs</span><strong>{activeJobs}</strong></div>
       </div>
 
       {error ? <p className="small" style={{ color: 'var(--danger)' }}>{error}</p> : null}
@@ -56,12 +56,12 @@ export default function DashboardPage() {
       <div className="grid grid-2">
         <UploadForm onComplete={loadDashboard} />
         <div className="card">
-          <h2 className="section-title">Szervezet és billing</h2>
-          <p className="small">Állítsd be a szervezetet, kezeld a tagokat és az előfizetést adatvédelmi kontrollokkal.</p>
+          <h2 className="section-title">Organization and billing</h2>
+          <p className="small">Configure your organization, manage members, and handle subscriptions with privacy controls.</p>
           <div className="stack-sm">
-            <Link className="btn btn-secondary" href="/organizations/register">Szervezet regisztráció</Link>
-            <Link className="btn btn-secondary" href="/members">Tagok kezelése</Link>
-            <Link className="btn btn-secondary" href="/pricing">Csomagváltás / checkout</Link>
+            <Link className="btn btn-secondary" href="/organizations/register">Register organization</Link>
+            <Link className="btn btn-secondary" href="/members">Manage members</Link>
+            <Link className="btn btn-secondary" href="/pricing">Change plan / checkout</Link>
             <Link className="btn btn-secondary" href="/admin/webhooks">Webhook admin</Link>
           </div>
         </div>

@@ -21,9 +21,9 @@ export default function WebhooksAdminPage() {
           ...(signature ? { 'stripe-signature': signature } : {})
         }
       }, token);
-      setResult('Webhook sikeresen elküldve.');
+      setResult('Webhook sent successfully.');
     } catch (error) {
-      setResult(error instanceof Error ? error.message : 'Webhook teszt sikertelen.');
+      setResult(error instanceof Error ? error.message : 'Webhook test failed.');
     }
   }
 
@@ -31,14 +31,14 @@ export default function WebhooksAdminPage() {
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card" style={{ marginBottom: 16 }}>
         <h1 style={{ marginTop: 0 }}>Stripe webhook admin</h1>
-        <p className="small">Minden webhook eseményt signature ellenőrzés után dolgozz fel, és naplózd az entitlement változásokat.</p>
+        <p className="small">Always verify webhook signatures and log entitlement changes.</p>
       </div>
       <form className="card" onSubmit={sendTestWebhook} style={{ display: 'grid', gap: 10 }}>
-        <label className="small">Stripe-Signature (opcionális teszthez)</label>
+        <label className="small">Stripe-Signature (optional for testing)</label>
         <input className="input" value={signature} onChange={(e) => setSignature(e.target.value)} />
         <label className="small">Payload</label>
         <textarea className="input" rows={8} value={payload} onChange={(e) => setPayload(e.target.value)} />
-        <button className="btn btn-primary" type="submit">Teszt webhook küldése</button>
+        <button className="btn btn-primary" type="submit">Send test webhook</button>
         {result ? <p className="small">{result}</p> : null}
       </form>
     </section>
