@@ -1,34 +1,47 @@
 import Link from 'next/link';
 import { DocumentSummary } from '@/lib/types';
 
+const STATUS_LABELS: Record<string, string> = {
+  queued: 'processing',
+  uploaded: 'processing',
+  running: 'processing',
+  completed: 'completed',
+  failed: 'failed'
+};
+
 export function DocumentTable({ documents }: { documents: DocumentSummary[] }) {
+  const sorted = [...documents].sort((a, b) => b.id.localeCompare(a.id));
+
   return (
     <div className="card">
-      <h2 className="section-title">Documents</h2>
+      <h2 className="section-title">Recent conversions</h2>
       <table className="table">
         <thead>
           <tr>
-            <th>Filename</th>
+            <th>File</th>
             <th>Status</th>
-            <th>Identifier</th>
-            <th>Actions</th>
+            <th>Result</th>
           </tr>
         </thead>
         <tbody>
-          {documents.map((doc) => (
-            <tr key={doc.id}>
-              <td>{doc.original_filename}</td>
-              <td>{doc.status}</td>
-              <td><code>{doc.id.slice(0, 8)}…</code></td>
-              <td className="actions-row">
-                <Link className="btn btn-secondary" href={`/documents/${doc.id}`}>Status</Link>
-                <Link className="btn btn-secondary" href={`/documents/${doc.id}?download=1`}>DOCX</Link>
-              </td>
-            </tr>
-          ))}
-          {documents.length === 0 ? (
+          {sorted.map((doc) => {
+            const status = STATUS_LABELS[doc.status] ?? doc.status;
+            return (
+              <tr key={doc.id}>
+                <td>{doc.original_filename}</td>
+                <td>{status}</td>
+                <td className="actions-row">
+                  <Link className="btn btn-secondary" href={`/documents/${doc.id}`}>View</Link>
+                  {status === 'completed' ? (
+                    <Link className="btn btn-primary" href={`/documents/${doc.id}?download=1`}>Download DOCX</Link>
+                  ) : null}
+                </td>
+              </tr>
+            );
+          })}
+          {sorted.length === 0 ? (
             <tr>
-              <td colSpan={4} className="small">No documents yet in this organization.</td>
+              <td colSpan={3} className="small">No conversions yet.</td>
             </tr>
           ) : null}
         </tbody>
