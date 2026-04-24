@@ -2,7 +2,6 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
 
 interface RegisterResponse {
   organization_id?: string;
@@ -32,19 +31,18 @@ export default function RegisterPage() {
     setMessage('');
 
     try {
-      const token = await getAccessToken();
       const payload = {
         account_type: form.account_type,
         organization_name: needsCompanyName ? form.organization_name : form.full_name,
         full_name: form.full_name,
         billing_email: form.billing_email,
+        password: form.password,
         plan_code: form.plan_code
       };
 
       const response = await apiFetch<RegisterResponse>(
         '/organizations/register',
-        { method: 'POST', body: JSON.stringify(payload) },
-        token
+        { method: 'POST', body: JSON.stringify(payload) }
       );
 
       if (response.checkout_url) {
