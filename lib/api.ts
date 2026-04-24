@@ -22,6 +22,27 @@ import {
 
 const accessTokenStorageKey = 'ocr_access_token';
 
+const PUBLIC_ENDPOINTS = new Set([
+  '/auth/login',
+  '/auth/authorization-url',
+  '/auth/callback',
+  '/organizations/register'
+]);
+
+function isPublicEndpoint(path: string) {
+  return PUBLIC_ENDPOINTS.has(path);
+}
+
+function assertBearerHeader(path: string, headers: Headers) {
+  if (isPublicEndpoint(path)) {
+    return;
+  }
+
+  if (!headers.has('Authorization')) {
+    throw new Error('Missing Bearer token. Please sign in again.');
+  }
+}
+
 function getStoredAccessToken() {
   if (typeof window === 'undefined') {
     return '';
@@ -67,14 +88,20 @@ function toNetworkError(path: string, error: unknown) {
   return error instanceof Error ? error : new Error('Unexpected network error');
 }
 
-async function assertResponseOk(response: Response) {
+async function assertResponseOk(response: Response, path: string) {
   if (response.ok) {
     return;
   }
 
   if (response.status === 401 && typeof window !== 'undefined') {
     clearAccessToken();
-    window.location.href = withBasePath('/login?reason=unauthorized');
+
+    const isAuthCheck = path === '/auth/me';
+    const isLoginPage = window.location.pathname.endsWith(withBasePath('/login'));
+
+    if (!isAuthCheck && !isLoginPage) {
+      window.location.href = withBasePath('/login?reason=unauthorized');
+    }
   }
 
   const text = await response.text();
@@ -86,6 +113,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
   if (!headers.has('Content-Type') && init?.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
+
+  assertBearerHeader(path, headers);
 
   let response: Response;
   try {
@@ -99,7 +128,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     throw toNetworkError(path, error);
   }
 
-  await assertResponseOk(response);
+  await assertResponseOk(response, path);
 
   if (response.status === 204) {
     return {} as T;
@@ -109,11 +138,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
 }
 
 export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?: string): Promise<Response> {
+  const headers = buildHeaders(init, accessToken);
+  assertBearerHeader(path, headers);
+
   let response: Response;
   try {
     response = await fetch(formatRequestUrl(path), {
       ...init,
-      headers: buildHeaders(init, accessToken),
+      headers,
       credentials: 'include',
       cache: 'no-store'
     });
@@ -121,7 +153,7 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
     throw toNetworkError(path, error);
   }
 
-  await assertResponseOk(response);
+  await assertResponseOk(response, path);
 
   return response;
 }
@@ -151,7 +183,7 @@ export function fetchAuthMe(accessToken: string) {
   return apiFetch<AuthMeResponse>('/auth/me', undefined, accessToken);
 }
 
-export function registerOrganization(payload: RegisterOrganizationRequest, accessToken: string) {
+export function registerOrganization(payload: RegisterOrganizationRequest, accessToken?: string) {
   return apiFetch<RegisterOrganizationResponse>('/organizations/register', {
     method: 'POST',
     body: JSON.stringify(payload)
