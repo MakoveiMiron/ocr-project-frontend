@@ -1,4 +1,4 @@
-const defaultApiBaseUrl = 'http://localhost:8000/api/v1';
+const defaultApiBaseUrl = 'https://web-production-3a8489.up.railway.app/api/v1';
 
 const serverApiBaseUrl =
   process.env.API_BASE_URL ??
