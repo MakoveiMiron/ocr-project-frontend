@@ -1,5 +1,5 @@
-import { config } from '@/lib/config';
-import { AuthCallbackResponse, AuthMeResponse, AuthorizationUrlResponse } from '@/lib/types';
+import { AuthCallbackResponse, AuthMeResponse } from '@/lib/types';
+import { createAuthorizationUrl, exchangeAuthCallback, fetchAuthMe } from '@/lib/api';
 
 const devAuthEnabled = process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const devAccessToken = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN || 'dev-token';
@@ -90,22 +90,6 @@ export function hasAccessToken() {
   return true;
 }
 
-async function authFetch<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    cache: 'no-store'
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text ? `Auth error: ${response.status} - ${text}` : `Auth error: ${response.status}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
 export async function startOidcLogin() {
   const state = generateRandomString();
   const nonce = generateRandomString();
@@ -117,7 +101,7 @@ export async function startOidcLogin() {
   window.sessionStorage.setItem(oidcStateStorageKey, state);
   window.sessionStorage.setItem(oidcNonceStorageKey, nonce);
 
-  const response = await authFetch<AuthorizationUrlResponse>('/auth/authorization-url', { state, nonce });
+  const response = await createAuthorizationUrl({ state, nonce });
 
   if (!response.authorization_url) {
     throw new Error('Missing authorization URL from backend.');
@@ -136,7 +120,7 @@ export async function completeOidcCallback(code: string, state: string): Promise
     throw new Error('State validation failed. Please try signing in again.');
   }
 
-  const tokenResponse = await authFetch<AuthCallbackResponse>('/auth/callback', { code, state });
+  const tokenResponse = await exchangeAuthCallback({ code, state });
   setAccessToken(tokenResponse.access_token, tokenResponse.expires_in);
 
   window.sessionStorage.removeItem(oidcStateStorageKey);
@@ -148,21 +132,13 @@ export async function completeOidcCallback(code: string, state: string): Promise
 export async function getCurrentUserProfile(): Promise<AuthMeResponse> {
   const token = await getAccessToken();
 
-  const response = await fetch(`${config.apiBaseUrl}/auth/me`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store'
-  });
-
-  if (response.status === 401) {
-    clearAccessToken();
-    throw new Error('Your session expired. Please sign in again.');
+  try {
+    return await fetchAuthMe(token);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('401')) {
+      clearAccessToken();
+      throw new Error('Your session expired. Please sign in again.');
+    }
+    throw error;
   }
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text ? `Profile error: ${response.status} - ${text}` : `Profile error: ${response.status}`);
-  }
-
-  return response.json() as Promise<AuthMeResponse>;
 }

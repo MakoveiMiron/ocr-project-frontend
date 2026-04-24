@@ -1,15 +1,8 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import { apiFetch } from '@/lib/api';
-
-interface RegisterResponse {
-  organization_id?: string;
-  checkout_url?: string;
-}
-
-type AccountType = 'individual' | 'company';
-type PlanCode = 'free' | 'pro' | 'enterprise';
+import { registerOrganization } from '@/lib/api';
+import { AccountType, PlanCode } from '@/lib/types';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -17,7 +10,6 @@ export default function RegisterPage() {
     organization_name: '',
     full_name: '',
     billing_email: '',
-    password: '',
     plan_code: 'free' as PlanCode
   });
   const [message, setMessage] = useState('');
@@ -33,17 +25,13 @@ export default function RegisterPage() {
     try {
       const payload = {
         account_type: form.account_type,
-        organization_name: needsCompanyName ? form.organization_name : form.full_name,
-        full_name: form.full_name,
-        billing_email: form.billing_email,
-        password: form.password,
+        organization_name: needsCompanyName ? form.organization_name : undefined,
+        full_name: form.full_name || undefined,
+        billing_email: form.billing_email || undefined,
         plan_code: form.plan_code
       };
 
-      const response = await apiFetch<RegisterResponse>(
-        '/organizations/register',
-        { method: 'POST', body: JSON.stringify(payload) }
-      );
+      const response = await registerOrganization(payload);
 
       if (response.checkout_url) {
         window.location.href = response.checkout_url;
@@ -104,16 +92,6 @@ export default function RegisterPage() {
           placeholder="you@example.com"
           value={form.billing_email}
           onChange={(e) => setForm((prev) => ({ ...prev, billing_email: e.target.value }))}
-        />
-
-        <label className="small">Password</label>
-        <input
-          className="input"
-          required
-          type="password"
-          placeholder="Create a password"
-          value={form.password}
-          onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
         />
 
         <label className="small">Plan</label>
