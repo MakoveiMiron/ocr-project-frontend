@@ -1,21 +1,28 @@
-import { AuthMeResponse } from '@/lib/types';
-import { createSessionLogin, fetchAuthMe } from '@/lib/api';
+import { AuthCallbackResponse, AuthMeResponse } from '@/lib/types';
+import { createAuthorizationUrl, createSessionLogin, exchangeAuthCallback, fetchAuthMe } from '@/lib/api';
 
 const devAuthEnabled = process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const devAccessToken = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN || 'dev-token';
 
 const accessTokenStorageKey = 'ocr_access_token';
 const accessTokenExpiresAtStorageKey = 'ocr_access_token_expires_at';
-<<<<<<< codex/fix-registration-endpoint-auth-requirement-t44856
 const sessionActiveStorageKey = 'ocr_session_active';
-=======
 const oidcStateStorageKey = 'ocr_oidc_state';
 const oidcNonceStorageKey = 'ocr_oidc_nonce';
 const postLoginRedirectStorageKey = 'ocr_post_login_redirect';
->>>>>>> main
 
 function inBrowser() {
   return typeof window !== 'undefined';
+}
+
+function generateRandomString() {
+  if (!inBrowser() || !window.crypto?.getRandomValues) {
+    return '';
+  }
+
+  const bytes = new Uint8Array(16);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 function setTokenExpiry(expiresInSeconds?: number) {
@@ -75,6 +82,9 @@ export function clearAccessToken() {
   window.sessionStorage.removeItem(accessTokenStorageKey);
   window.sessionStorage.removeItem(accessTokenExpiresAtStorageKey);
   window.sessionStorage.removeItem(sessionActiveStorageKey);
+  window.sessionStorage.removeItem(oidcStateStorageKey);
+  window.sessionStorage.removeItem(oidcNonceStorageKey);
+  window.sessionStorage.removeItem(postLoginRedirectStorageKey);
 }
 
 export function hasAccessToken() {
@@ -94,13 +104,18 @@ export function hasAccessToken() {
   return true;
 }
 
-<<<<<<< codex/fix-registration-endpoint-auth-requirement-t44856
 export async function signInWithSession(email: string, password: string) {
   const response = await createSessionLogin({ email, password });
   if (response.access_token) {
     setAccessToken(response.access_token, response.expires_in);
     return;
-=======
+  }
+
+  if (inBrowser()) {
+    window.sessionStorage.setItem(sessionActiveStorageKey, 'true');
+  }
+}
+
 export async function startOidcLogin(postLoginRedirect = '/dashboard') {
   const state = generateRandomString();
   const nonce = generateRandomString();
@@ -125,12 +140,19 @@ export async function startOidcLogin(postLoginRedirect = '/dashboard') {
 export async function completeOidcCallback(code: string, state: string): Promise<AuthCallbackResponse> {
   if (!inBrowser()) {
     throw new Error('Callback handling is only available in the browser.');
->>>>>>> main
   }
 
-  if (inBrowser()) {
-    window.sessionStorage.setItem(sessionActiveStorageKey, 'true');
+  const expectedState = window.sessionStorage.getItem(oidcStateStorageKey);
+  if (!expectedState || expectedState !== state) {
+    throw new Error('OIDC state validation failed. Please sign in again.');
   }
+
+  const response = await exchangeAuthCallback({ code, state });
+  setAccessToken(response.access_token, response.expires_in);
+  window.sessionStorage.removeItem(oidcStateStorageKey);
+  window.sessionStorage.removeItem(oidcNonceStorageKey);
+
+  return response;
 }
 
 export function consumePostLoginRedirect() {
