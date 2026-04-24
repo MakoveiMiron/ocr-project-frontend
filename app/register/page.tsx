@@ -79,73 +79,68 @@ export default function RegisterPage() {
 
         {authenticated ? (
           <>
+            <label className="small">Account type</label>
+            <select
+              className="select"
+              value={form.account_type}
+              onChange={(e) => setForm((prev) => ({ ...prev, account_type: e.target.value as AccountType }))}
+            >
+              <option value="individual">Individual</option>
+              <option value="company">Company</option>
+            </select>
 
-        <label className="small">Account type</label>
-        <select
-          className="select"
-          value={form.account_type}
-          onChange={(e) => setForm((prev) => ({ ...prev, account_type: e.target.value as AccountType }))}
-        >
-          <option value="individual">Individual</option>
-          <option value="company">Company</option>
-        </select>
+            {needsCompanyName ? (
+              <>
+                <label className="small">Company name</label>
+                <input
+                  className="input"
+                  required
+                  placeholder="Your company name"
+                  value={form.organization_name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, organization_name: e.target.value }))}
+                />
+              </>
+            ) : null}
 
-        {needsCompanyName ? (
-          <>
-            <label className="small">Company name</label>
+            <label className="small">Full name</label>
             <input
               className="input"
               required
-              placeholder="Your company name"
-              value={form.organization_name}
-              onChange={(e) => setForm((prev) => ({ ...prev, organization_name: e.target.value }))}
+              placeholder="Your full name"
+              value={form.full_name}
+              onChange={(e) => setForm((prev) => ({ ...prev, full_name: e.target.value }))}
             />
-          </>
-        ) : null}
 
-        <label className="small">Full name</label>
-        <input
-          className="input"
-          required
-          placeholder="Your full name"
-          value={form.full_name}
-          onChange={(e) => setForm((prev) => ({ ...prev, full_name: e.target.value }))}
-        />
+            <label className="small">Email</label>
+            <input
+              className="input"
+              required
+              type="email"
+              placeholder="you@example.com"
+              value={form.billing_email}
+              onChange={(e) => setForm((prev) => ({ ...prev, billing_email: e.target.value }))}
+            />
 
-        <label className="small">Email</label>
-        <input
-          className="input"
-          required
-          type="email"
-          placeholder="you@example.com"
-          value={form.billing_email}
-          onChange={(e) => setForm((prev) => ({ ...prev, billing_email: e.target.value }))}
-        />
-
-        <label className="small">Plan</label>
-        <select
-          className="select"
-          value={form.plan_code}
-          onChange={(e) => setForm((prev) => ({ ...prev, plan_code: e.target.value as PlanCode }))}
-        >
-          <option value="free">Free</option>
-          <option value="pro">Pro</option>
-          <option value="enterprise">Enterprise</option>
-        </select>
+            <label className="small">Plan</label>
+            <select
+              className="select"
+              value={form.plan_code}
+              onChange={(e) => setForm((prev) => ({ ...prev, plan_code: e.target.value as PlanCode }))}
+            >
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
 
             <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Creating account...' : 'Create account'}
             </button>
-<<<<<<< codex/fix-registration-endpoint-auth-requirement-t44856
             <p className="small" style={{ marginBottom: 0 }}>
               Already have an account? <Link href="/login">Sign in</Link>
             </p>
             {message ? <p className="small">{message}</p> : null}
-=======
-            {message ? <p className="small">{message}</p> : null}
           </>
         ) : null}
->>>>>>> main
       </form>
     </section>
   );
