@@ -1,15 +1,60 @@
-const oidcAuthUrl = process.env.NEXT_PUBLIC_OIDC_AUTH_URL;
-const oidcClientId = process.env.NEXT_PUBLIC_OIDC_CLIENT_ID;
-const oidcAudience = process.env.NEXT_PUBLIC_OIDC_AUDIENCE;
+import { config } from '@/lib/config';
+import { AuthCallbackResponse, AuthMeResponse, AuthorizationUrlResponse } from '@/lib/types';
+
 const devAuthEnabled = process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const devAccessToken = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN || 'dev-token';
+
 const accessTokenStorageKey = 'ocr_access_token';
+const accessTokenExpiresAtStorageKey = 'ocr_access_token_expires_at';
+const oidcStateStorageKey = 'ocr_oidc_state';
+const oidcNonceStorageKey = 'ocr_oidc_nonce';
+
+function inBrowser() {
+  return typeof window !== 'undefined';
+}
+
+export function generateRandomString(length = 32) {
+  if (!inBrowser()) {
+    return '';
+  }
+
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const bytes = new Uint8Array(length);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((byte) => charset[byte % charset.length]).join('');
+}
+
+function setTokenExpiry(expiresInSeconds?: number) {
+  if (!inBrowser()) return;
+  if (!expiresInSeconds || expiresInSeconds <= 0) {
+    window.sessionStorage.removeItem(accessTokenExpiresAtStorageKey);
+    return;
+  }
+
+  const expiresAt = Date.now() + expiresInSeconds * 1000;
+  window.sessionStorage.setItem(accessTokenExpiresAtStorageKey, String(expiresAt));
+}
+
+function isTokenExpired() {
+  if (!inBrowser()) return false;
+  const expiresAtValue = window.sessionStorage.getItem(accessTokenExpiresAtStorageKey);
+  if (!expiresAtValue) return false;
+
+  const expiresAt = Number(expiresAtValue);
+  if (Number.isNaN(expiresAt)) return false;
+
+  return Date.now() >= expiresAt;
+}
 
 export async function getAccessToken(): Promise<string> {
-  if (typeof window !== 'undefined') {
+  if (inBrowser()) {
     const token = window.sessionStorage.getItem(accessTokenStorageKey);
-    if (token) {
+    if (token && !isTokenExpired()) {
       return token;
+    }
+
+    if (token && isTokenExpired()) {
+      clearAccessToken();
     }
   }
 
@@ -20,35 +65,104 @@ export async function getAccessToken(): Promise<string> {
   throw new Error('Authentication required. Please sign in to continue.');
 }
 
-export function setAccessToken(token: string) {
-  if (typeof window === 'undefined') return;
+export function setAccessToken(token: string, expiresInSeconds?: number) {
+  if (!inBrowser()) return;
   window.sessionStorage.setItem(accessTokenStorageKey, token);
+  setTokenExpiry(expiresInSeconds);
 }
 
 export function clearAccessToken() {
-  if (typeof window === 'undefined') return;
+  if (!inBrowser()) return;
   window.sessionStorage.removeItem(accessTokenStorageKey);
+  window.sessionStorage.removeItem(accessTokenExpiresAtStorageKey);
 }
 
 export function hasAccessToken() {
-  if (typeof window === 'undefined') return false;
-  return Boolean(window.sessionStorage.getItem(accessTokenStorageKey));
+  if (!inBrowser()) return false;
+  const token = window.sessionStorage.getItem(accessTokenStorageKey);
+  if (!token) return false;
+
+  if (isTokenExpired()) {
+    clearAccessToken();
+    return false;
+  }
+
+  return true;
 }
 
-export function getOidcLoginUrl() {
-  if (!oidcAuthUrl || !oidcClientId || typeof window === 'undefined') {
-    return null;
+async function authFetch<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${config.apiBaseUrl}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text ? `Auth error: ${response.status} - ${text}` : `Auth error: ${response.status}`);
   }
 
-  const redirectUri = `${window.location.origin}/login/callback`;
-  const authUrl = new URL(oidcAuthUrl);
-  authUrl.searchParams.set('client_id', oidcClientId);
-  authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'openid profile email');
-  authUrl.searchParams.set('redirect_uri', redirectUri);
-  if (oidcAudience) {
-    authUrl.searchParams.set('audience', oidcAudience);
+  return response.json() as Promise<T>;
+}
+
+export async function startOidcLogin() {
+  const state = generateRandomString();
+  const nonce = generateRandomString();
+
+  if (!state || !nonce) {
+    throw new Error('Login is only available in the browser.');
   }
 
-  return authUrl.toString();
+  window.sessionStorage.setItem(oidcStateStorageKey, state);
+  window.sessionStorage.setItem(oidcNonceStorageKey, nonce);
+
+  const response = await authFetch<AuthorizationUrlResponse>('/auth/authorization-url', { state, nonce });
+
+  if (!response.authorization_url) {
+    throw new Error('Missing authorization URL from backend.');
+  }
+
+  window.location.href = response.authorization_url;
+}
+
+export async function completeOidcCallback(code: string, state: string): Promise<AuthCallbackResponse> {
+  if (!inBrowser()) {
+    throw new Error('Callback handling is only available in the browser.');
+  }
+
+  const expectedState = window.sessionStorage.getItem(oidcStateStorageKey);
+  if (!expectedState || expectedState !== state) {
+    throw new Error('State validation failed. Please try signing in again.');
+  }
+
+  const tokenResponse = await authFetch<AuthCallbackResponse>('/auth/callback', { code, state });
+  setAccessToken(tokenResponse.access_token, tokenResponse.expires_in);
+
+  window.sessionStorage.removeItem(oidcStateStorageKey);
+  window.sessionStorage.removeItem(oidcNonceStorageKey);
+
+  return tokenResponse;
+}
+
+export async function getCurrentUserProfile(): Promise<AuthMeResponse> {
+  const token = await getAccessToken();
+
+  const response = await fetch(`${config.apiBaseUrl}/auth/me`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store'
+  });
+
+  if (response.status === 401) {
+    clearAccessToken();
+    throw new Error('Your session expired. Please sign in again.');
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text ? `Profile error: ${response.status} - ${text}` : `Profile error: ${response.status}`);
+  }
+
+  return response.json() as Promise<AuthMeResponse>;
 }

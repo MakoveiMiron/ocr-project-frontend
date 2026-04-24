@@ -1,32 +1,39 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
-import { clearAccessToken, getOidcLoginUrl, hasAccessToken, setAccessToken } from '@/lib/auth';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { clearAccessToken, hasAccessToken, startOidcLogin } from '@/lib/auth';
+import { config } from '@/lib/config';
 
-export default function LoginPage() {
-  const [token, setToken] = useState('');
+function LoginContent() {
   const [message, setMessage] = useState('');
-  const [authenticated, setAuthenticated] = useState(hasAccessToken());
-  const oidcUrl = getOidcLoginUrl();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
+  const authenticated = hasAccessToken();
 
-  function handleManualTokenSubmit(event: FormEvent) {
-    event.preventDefault();
-    const trimmed = token.trim();
-    if (!trimmed) {
-      setMessage('Please paste an access token.');
-      return;
+  const infoMessage = useMemo(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'unauthorized') {
+      return 'Your session expired or is invalid. Please sign in again.';
     }
 
-    setAccessToken(trimmed);
-    setAuthenticated(true);
-    setToken('');
-    setMessage('Signed in. You can now upload and convert files.');
+    return '';
+  }, [searchParams]);
+
+  async function handleLoginClick() {
+    setMessage('');
+    setIsSubmitting(true);
+    try {
+      await startOidcLogin();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not start login. Please try again.');
+      setIsSubmitting(false);
+    }
   }
 
   function handleSignOut() {
     clearAccessToken();
-    setAuthenticated(false);
     setMessage('Signed out.');
   }
 
@@ -37,36 +44,30 @@ export default function LoginPage() {
         <p className="small">
           Sign in to your account to upload PDF files, track conversion progress, and download DOCX results.
         </p>
+        {infoMessage ? <p className="small">{infoMessage}</p> : null}
         {authenticated ? (
           <div className="grid" style={{ gap: 10 }}>
             <p className="small">You are authenticated in this browser session.</p>
             <div className="actions-row">
-              <Link className="btn btn-primary" href="/">Go to converter</Link>
+              <Link className="btn btn-primary" href="/dashboard">Go to dashboard</Link>
               <button className="btn btn-secondary" type="button" onClick={handleSignOut}>Sign out</button>
             </div>
           </div>
-        ) : null}
-        {oidcUrl ? (
-          <a className="btn btn-primary" href={oidcUrl}>Continue to sign in</a>
         ) : (
-          <p className="small">Set NEXT_PUBLIC_OIDC_AUTH_URL and NEXT_PUBLIC_OIDC_CLIENT_ID.</p>
+          <button className="btn btn-primary" type="button" onClick={handleLoginClick} disabled={isSubmitting}>
+            {isSubmitting ? 'Redirecting...' : `Login with ${config.oidcProviderName}`}
+          </button>
         )}
-        {!authenticated ? (
-          <form onSubmit={handleManualTokenSubmit} style={{ marginTop: 16, display: 'grid', gap: 8 }}>
-            <label className="small" htmlFor="access-token">Access token (JWT)</label>
-            <textarea
-              id="access-token"
-              className="input"
-              placeholder="Paste Bearer token from your auth provider"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              rows={5}
-            />
-            <button className="btn btn-secondary" type="submit">Use this token</button>
-          </form>
-        ) : null}
         {message ? <p className="small">{message}</p> : null}
       </div>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<section className="container"><p className="small">Loading sign-in…</p></section>}>
+      <LoginContent />
+    </Suspense>
   );
 }
