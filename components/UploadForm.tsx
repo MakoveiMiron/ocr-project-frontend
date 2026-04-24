@@ -51,7 +51,11 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
           ? (() => {
               const formData = new FormData();
               formData.append('file', file);
-              return { method: 'PUT', body: formData };
+              return {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData
+              };
             })()
           : {
               method: 'PUT',
@@ -94,7 +98,7 @@ export function UploadForm({ onComplete }: { onComplete?: () => Promise<void> | 
         <input
           className="input"
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/jpeg,image/png,image/tiff,image/webp,image/bmp"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
       </div>

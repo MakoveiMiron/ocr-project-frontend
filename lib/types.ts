@@ -28,17 +28,24 @@ export interface DocumentSummary {
 }
 
 export interface ProcessingJobStatus {
-  id?: string;
-  status?: string;
+  job_id?: string;
+  job_status?: string;
   current_step?: string;
+  error_message?: string | null;
 }
 
 export interface DocumentDetail extends DocumentSummary {
+  document_id?: string;
+  document_status?: string;
   block_count?: number;
   retention_deadline?: string | null;
   cleanup_status?: string;
-  complexity_results?: Record<string, unknown>;
-  ocr_routing_decisions?: Record<string, unknown>;
+  complexity_scores?: Record<string, unknown>;
+  ocr_routing_decisions?: Array<{ block_id: string; engine: string; reason: string }> | Record<string, unknown>;
   docx_available?: boolean;
+  job_id?: string;
+  job_status?: string;
+  current_step?: string;
+  error_message?: string | null;
   latest_job?: ProcessingJobStatus;
 }

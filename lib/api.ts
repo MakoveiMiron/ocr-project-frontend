@@ -21,7 +21,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    const text = await response.text();
+    throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
   }
 
   if (response.status === 204) {
@@ -39,7 +40,8 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    const text = await response.text();
+    throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
   }
 
   return response;

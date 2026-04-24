@@ -15,7 +15,7 @@ export default function HomePage() {
   const loadDocuments = useCallback(async () => {
     try {
       const token = await getAccessToken();
-      const docs = await apiFetch<DocumentSummary[]>('/documents/', undefined, token);
+      const docs = await apiFetch<DocumentSummary[]>('/documents', undefined, token);
       setDocuments(docs);
       setError('');
     } catch (err) {
