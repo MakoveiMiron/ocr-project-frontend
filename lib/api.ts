@@ -67,14 +67,20 @@ function toNetworkError(path: string, error: unknown) {
   return error instanceof Error ? error : new Error('Unexpected network error');
 }
 
-async function assertResponseOk(response: Response) {
+async function assertResponseOk(response: Response, path: string) {
   if (response.ok) {
     return;
   }
 
   if (response.status === 401 && typeof window !== 'undefined') {
     clearAccessToken();
-    window.location.href = withBasePath('/login?reason=unauthorized');
+
+    const isAuthCheck = path === '/auth/me';
+    const isLoginPage = window.location.pathname.endsWith(withBasePath('/login'));
+
+    if (!isAuthCheck && !isLoginPage) {
+      window.location.href = withBasePath('/login?reason=unauthorized');
+    }
   }
 
   const text = await response.text();
@@ -99,7 +105,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     throw toNetworkError(path, error);
   }
 
-  await assertResponseOk(response);
+  await assertResponseOk(response, path);
 
   if (response.status === 204) {
     return {} as T;
@@ -121,7 +127,7 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
     throw toNetworkError(path, error);
   }
 
-  await assertResponseOk(response);
+  await assertResponseOk(response, path);
 
   return response;
 }
