@@ -130,11 +130,11 @@ export function fetchAuthMe(accessToken: string) {
   return apiFetch<AuthMeResponse>('/auth/me', undefined, accessToken);
 }
 
-export function registerOrganization(payload: RegisterOrganizationRequest) {
+export function registerOrganization(payload: RegisterOrganizationRequest, accessToken: string) {
   return apiFetch<RegisterOrganizationResponse>('/organizations/register', {
     method: 'POST',
     body: JSON.stringify(payload)
-  });
+  }, accessToken);
 }
 
 export function fetchMyOrganization(accessToken: string) {

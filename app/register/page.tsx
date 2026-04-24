@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { registerOrganization } from '@/lib/api';
+import { getAccessToken, hasAccessToken, startOidcLogin } from '@/lib/auth';
 import { AccountType, PlanCode } from '@/lib/types';
 
 export default function RegisterPage() {
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   });
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const authenticated = hasAccessToken();
 
   const needsCompanyName = useMemo(() => form.account_type === 'company', [form.account_type]);
 
@@ -23,6 +25,7 @@ export default function RegisterPage() {
     setMessage('');
 
     try {
+      const accessToken = await getAccessToken();
       const payload = {
         account_type: form.account_type,
         organization_name: needsCompanyName ? form.organization_name : undefined,
@@ -31,7 +34,7 @@ export default function RegisterPage() {
         plan_code: form.plan_code
       };
 
-      const response = await registerOrganization(payload);
+      const response = await registerOrganization(payload, accessToken);
 
       if (response.checkout_url) {
         window.location.href = response.checkout_url;
@@ -46,11 +49,35 @@ export default function RegisterPage() {
     }
   }
 
+  async function handleSignInToContinue() {
+    setMessage('');
+    setIsSubmitting(true);
+    try {
+      await startOidcLogin('/register');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not start sign in.');
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <form className="card" onSubmit={handleSubmit} style={{ maxWidth: 640, display: 'grid', gap: 12 }}>
         <h1 style={{ marginTop: 0 }}>Create your account</h1>
         <p className="small">Choose your account type and plan to start converting PDF files to DOCX.</p>
+
+        {!authenticated ? (
+          <>
+            <p className="small">Sign in with OIDC first, then complete organization registration.</p>
+            <button className="btn btn-primary" type="button" onClick={handleSignInToContinue} disabled={isSubmitting}>
+              {isSubmitting ? 'Redirecting...' : 'Sign in to continue'}
+            </button>
+            {message ? <p className="small">{message}</p> : null}
+          </>
+        ) : null}
+
+        {authenticated ? (
+          <>
 
         <label className="small">Account type</label>
         <select
@@ -105,10 +132,12 @@ export default function RegisterPage() {
           <option value="enterprise">Enterprise</option>
         </select>
 
-        <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating account...' : 'Create account'}
-        </button>
-        {message ? <p className="small">{message}</p> : null}
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Create account'}
+            </button>
+            {message ? <p className="small">{message}</p> : null}
+          </>
+        ) : null}
       </form>
     </section>
   );
