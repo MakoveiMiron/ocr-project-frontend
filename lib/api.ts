@@ -1,5 +1,22 @@
 import { clearAccessToken } from '@/lib/auth';
 import { config } from '@/lib/config';
+import {
+  AuthMeResponse,
+  AuthCallbackResponse,
+  AuthorizationUrlResponse,
+  BillingCheckoutResponse,
+  BillingPortalResponse,
+  DocumentDetail,
+  DocumentSummary,
+  OrganizationMember,
+  OrganizationSummary,
+  ProcessDocumentRequest,
+  ProcessDocumentResponse,
+  RegisterOrganizationRequest,
+  RegisterOrganizationResponse,
+  UploadInitRequest,
+  UploadInitResponse
+} from '@/lib/types';
 
 function buildHeaders(init?: RequestInit, accessToken?: string) {
   const headers = new Headers(init?.headers);
@@ -54,4 +71,71 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
   await assertResponseOk(response);
 
   return response;
+}
+
+export function createAuthorizationUrl(payload: { state: string; nonce: string }) {
+  return apiFetch<AuthorizationUrlResponse>('/auth/authorization-url', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export function exchangeAuthCallback(payload: { code: string; state: string }) {
+  return apiFetch<AuthCallbackResponse>('/auth/callback', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export function fetchAuthMe(accessToken: string) {
+  return apiFetch<AuthMeResponse>('/auth/me', undefined, accessToken);
+}
+
+export function registerOrganization(payload: RegisterOrganizationRequest) {
+  return apiFetch<RegisterOrganizationResponse>('/organizations/register', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export function fetchMyOrganization(accessToken: string) {
+  return apiFetch<OrganizationSummary>('/organizations/me', undefined, accessToken);
+}
+
+export function fetchOrganizationMembers(organizationId: string, accessToken: string) {
+  return apiFetch<OrganizationMember[]>(`/organizations/${organizationId}/members`, undefined, accessToken);
+}
+
+export function initDocumentUpload(payload: UploadInitRequest, accessToken: string) {
+  return apiFetch<UploadInitResponse>('/documents/upload/init', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }, accessToken);
+}
+
+export function processDocument(documentId: string, payload: ProcessDocumentRequest, accessToken: string) {
+  return apiFetch<ProcessDocumentResponse>(`/documents/${documentId}/process`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }, accessToken);
+}
+
+export function fetchDocuments(accessToken: string) {
+  return apiFetch<DocumentSummary[]>('/documents', undefined, accessToken);
+}
+
+export function fetchDocumentDetail(documentId: string, accessToken: string) {
+  return apiFetch<DocumentDetail>(`/documents/${documentId}`, undefined, accessToken);
+}
+
+export function downloadDocument(documentId: string, accessToken: string) {
+  return apiFetchRaw(`/documents/${documentId}/download`, undefined, accessToken);
+}
+
+export function createBillingCheckout(planCode: string, accessToken: string) {
+  return apiFetch<BillingCheckoutResponse>(`/billing/checkout/${planCode}`, { method: 'POST' }, accessToken);
+}
+
+export function createBillingPortal(accessToken: string) {
+  return apiFetch<BillingPortalResponse>('/billing/portal', { method: 'POST' }, accessToken);
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { PlanCard } from '@/components/PlanCard';
-import { apiFetch } from '@/lib/api';
+import { createBillingPortal } from '@/lib/api';
 import { getAccessToken, hasAccessToken } from '@/lib/auth';
 import { Plan } from '@/lib/types';
 
@@ -28,10 +28,6 @@ const plans: Plan[] = [
   }
 ];
 
-interface BillingPortalResponse {
-  portal_url: string;
-}
-
 export default function SubscriptionPage() {
   const [message, setMessage] = useState('');
   const [isAuthenticated] = useState(hasAccessToken());
@@ -44,7 +40,7 @@ export default function SubscriptionPage() {
 
     try {
       const token = await getAccessToken();
-      const response = await apiFetch<BillingPortalResponse>('/billing/portal', { method: 'POST' }, token);
+      const response = await createBillingPortal(token);
       window.location.href = response.portal_url;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to open billing portal.');

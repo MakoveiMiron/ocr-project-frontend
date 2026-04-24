@@ -2,12 +2,8 @@
 
 import { useState } from 'react';
 import { Plan } from '@/lib/types';
-import { apiFetch } from '@/lib/api';
+import { createBillingCheckout } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
-
-interface CheckoutResponse {
-  checkout_url: string;
-}
 
 export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticated: boolean }) {
   const [error, setError] = useState('');
@@ -23,7 +19,7 @@ export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticate
     setError('');
     try {
       const token = await getAccessToken();
-      const response = await apiFetch<CheckoutResponse>(`/billing/checkout/${plan.code}`, { method: 'POST' }, token);
+      const response = await createBillingCheckout(plan.code, token);
       window.location.href = response.checkout_url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start checkout.');
