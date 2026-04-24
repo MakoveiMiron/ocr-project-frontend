@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getCurrentUserProfile, hasAccessToken, markSessionActive } from '@/lib/auth';
+import { getCurrentUserProfile } from '@/lib/auth';
 import { AuthMeResponse } from '@/lib/types';
 
 export function useAuthStatus() {
@@ -14,11 +14,6 @@ export function useAuthStatus() {
 
     async function checkAuth() {
       try {
-        if (!hasAccessToken()) {
-          await getCurrentUserProfile();
-          markSessionActive();
-        }
-
         const resolvedProfile = await getCurrentUserProfile();
         if (!mounted) return;
         setIsAuthenticated(true);

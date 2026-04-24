@@ -62,6 +62,7 @@ export interface SessionLoginResponse {
   access_token?: string;
   token_type?: string;
   expires_in?: number;
+  user?: AuthMeResponse;
 }
 
 export interface AuthCallbackResponse {
@@ -91,7 +92,11 @@ export interface RegisterOrganizationResponse {
   organization_id: string;
   account_type: AccountType;
   plan_code: PlanCode;
-  checkout_url?: string;
+  checkout_url?: string | null;
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  user?: AuthMeResponse;
 }
 
 export interface UploadInitRequest {

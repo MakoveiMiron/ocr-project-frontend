@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Plan } from '@/lib/types';
 import { createBillingCheckout } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
+import { getOptionalAccessToken } from '@/lib/auth';
 
 export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticated: boolean }) {
   const [error, setError] = useState('');
@@ -18,7 +18,7 @@ export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticate
     setBusy(true);
     setError('');
     try {
-      const token = await getAccessToken();
+      const token = await getOptionalAccessToken();
       const response = await createBillingCheckout(plan.code, token);
       window.location.href = response.checkout_url;
     } catch (err) {

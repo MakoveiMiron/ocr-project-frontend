@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { clearAccessToken, signInWithSession } from '@/lib/auth';
+import { signInWithSession, signOut } from '@/lib/auth';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 
 function LoginContent() {
@@ -14,6 +14,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isAuthenticated: authenticated } = useAuthStatus();
+  const nextPath = useMemo(() => searchParams.get('next') || '/dashboard', [searchParams]);
 
   const infoMessage = useMemo(() => {
     const reason = searchParams.get('reason');
@@ -26,9 +27,9 @@ function LoginContent() {
 
   useEffect(() => {
     if (authenticated) {
-      router.replace('/');
+      router.replace(nextPath);
     }
-  }, [authenticated, router]);
+  }, [authenticated, nextPath, router]);
 
   async function handleLoginSubmit(event: FormEvent) {
     event.preventDefault();
@@ -36,15 +37,16 @@ function LoginContent() {
     setIsSubmitting(true);
     try {
       await signInWithSession(email, password);
-      router.replace('/');
+      router.replace(nextPath);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not sign in. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   }
 
-  function handleSignOut() {
-    clearAccessToken();
+  async function handleSignOut() {
+    await signOut();
     setMessage('Signed out.');
   }
 
@@ -60,7 +62,7 @@ function LoginContent() {
           <div className="grid" style={{ gap: 10 }}>
             <p className="small">You are authenticated in this browser session.</p>
             <div className="actions-row">
-              <Link className="btn btn-primary" href="/">Go to app</Link>
+              <Link className="btn btn-primary" href={nextPath}>Continue</Link>
               <button className="btn btn-secondary" type="button" onClick={handleSignOut}>Sign out</button>
             </div>
           </div>

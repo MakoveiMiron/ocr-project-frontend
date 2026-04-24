@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PlanCard } from '@/components/PlanCard';
 import { createBillingPortal } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
+import { getOptionalAccessToken } from '@/lib/auth';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 import { Plan } from '@/lib/types';
 
@@ -40,7 +40,7 @@ export default function SubscriptionPage() {
     }
 
     try {
-      const token = await getAccessToken();
+      const token = await getOptionalAccessToken();
       const response = await createBillingPortal(token);
       window.location.href = response.portal_url;
     } catch (error) {

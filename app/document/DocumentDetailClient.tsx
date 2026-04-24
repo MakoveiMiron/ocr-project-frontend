@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { downloadDocument, fetchDocumentDetail } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
+import { getOptionalAccessToken } from '@/lib/auth';
 import { DocumentDetail } from '@/lib/types';
 
 export default function DocumentDetailClient() {
@@ -21,7 +21,7 @@ export default function DocumentDetailClient() {
 
     async function load() {
       try {
-        const token = await getAccessToken();
+        const token = await getOptionalAccessToken();
         const detail = await fetchDocumentDetail(documentId, token);
         setDocument(detail);
         setMessage('');
@@ -39,7 +39,7 @@ export default function DocumentDetailClient() {
     async function maybeDownload() {
       if (searchParams.get('download') !== '1' || !documentId) return;
       try {
-        const token = await getAccessToken();
+        const token = await getOptionalAccessToken();
         const response = await downloadDocument(documentId, token);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
