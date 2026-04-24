@@ -6,7 +6,6 @@ const devAccessToken = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN || 'dev-token';
 
 const accessTokenStorageKey = 'ocr_access_token';
 const accessTokenExpiresAtStorageKey = 'ocr_access_token_expires_at';
-const sessionActiveStorageKey = 'ocr_session_active';
 const oidcStateStorageKey = 'ocr_oidc_state';
 const oidcNonceStorageKey = 'ocr_oidc_nonce';
 const postLoginRedirectStorageKey = 'ocr_post_login_redirect';
@@ -57,10 +56,6 @@ export async function getAccessToken(): Promise<string> {
     if (token && isTokenExpired()) {
       clearAccessToken();
     }
-
-    if (window.sessionStorage.getItem(sessionActiveStorageKey) === 'true') {
-      return '';
-    }
   }
 
   if (devAuthEnabled) {
@@ -86,7 +81,6 @@ export function clearAccessToken() {
   if (!inBrowser()) return;
   window.sessionStorage.removeItem(accessTokenStorageKey);
   window.sessionStorage.removeItem(accessTokenExpiresAtStorageKey);
-  window.sessionStorage.removeItem(sessionActiveStorageKey);
   window.sessionStorage.removeItem(oidcStateStorageKey);
   window.sessionStorage.removeItem(oidcNonceStorageKey);
   window.sessionStorage.removeItem(postLoginRedirectStorageKey);
@@ -94,10 +88,6 @@ export function clearAccessToken() {
 
 export function hasAccessToken() {
   if (!inBrowser()) return false;
-  if (window.sessionStorage.getItem(sessionActiveStorageKey) === 'true') {
-    return true;
-  }
-
   const token = window.sessionStorage.getItem(accessTokenStorageKey);
   if (!token) return false;
 

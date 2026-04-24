@@ -22,6 +22,27 @@ import {
 
 const accessTokenStorageKey = 'ocr_access_token';
 
+const PUBLIC_ENDPOINTS = new Set([
+  '/auth/login',
+  '/auth/authorization-url',
+  '/auth/callback',
+  '/organizations/register'
+]);
+
+function isPublicEndpoint(path: string) {
+  return PUBLIC_ENDPOINTS.has(path);
+}
+
+function assertBearerHeader(path: string, headers: Headers) {
+  if (isPublicEndpoint(path)) {
+    return;
+  }
+
+  if (!headers.has('Authorization')) {
+    throw new Error('Missing Bearer token. Please sign in again.');
+  }
+}
+
 function getStoredAccessToken() {
   if (typeof window === 'undefined') {
     return '';
@@ -93,6 +114,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     headers.set('Content-Type', 'application/json');
   }
 
+  assertBearerHeader(path, headers);
+
   let response: Response;
   try {
     response = await fetch(formatRequestUrl(path), {
@@ -115,11 +138,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
 }
 
 export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?: string): Promise<Response> {
+  const headers = buildHeaders(init, accessToken);
+  assertBearerHeader(path, headers);
+
   let response: Response;
   try {
     response = await fetch(formatRequestUrl(path), {
       ...init,
-      headers: buildHeaders(init, accessToken),
+      headers,
       credentials: 'include',
       cache: 'no-store'
     });
