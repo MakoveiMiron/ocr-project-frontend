@@ -95,8 +95,13 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
         const isLocalUpload = init.upload_url.includes('/local-upload');
         const uploadUrl = isLocalUpload
           ? (() => {
-              const parsedUrl = new URL(init.upload_url, window.location.origin);
-              return `${parsedUrl.pathname}${parsedUrl.search}`;
+              const formData = new FormData();
+              formData.append('file', file);
+              return {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData
+              };
             })()
           : init.upload_url;
         const uploadResponse = await fetch(
@@ -157,10 +162,8 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
         <input
           className="input"
           type="file"
-          multiple
           accept="application/pdf,image/jpeg,image/png,image/tiff,image/webp,image/bmp"
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-          disabled={!isAuthenticated || isBusy}
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
       </div>
       <button className="btn btn-primary mt-16" onClick={handleUpload} disabled={!files.length || isBusy || !isAuthenticated}>
