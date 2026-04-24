@@ -19,10 +19,21 @@ import {
   UploadInitResponse
 } from '@/lib/types';
 
+const accessTokenStorageKey = 'ocr_access_token';
+
+function getStoredAccessToken() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return window.sessionStorage.getItem(accessTokenStorageKey) || '';
+}
+
 function buildHeaders(init?: RequestInit, accessToken?: string) {
   const headers = new Headers(init?.headers);
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
+  const resolvedAccessToken = accessToken || getStoredAccessToken();
+  if (resolvedAccessToken) {
+    headers.set('Authorization', `Bearer ${resolvedAccessToken}`);
   }
   return headers;
 }
@@ -130,11 +141,11 @@ export function fetchAuthMe(accessToken: string) {
   return apiFetch<AuthMeResponse>('/auth/me', undefined, accessToken);
 }
 
-export function registerOrganization(payload: RegisterOrganizationRequest) {
+export function registerOrganization(payload: RegisterOrganizationRequest, accessToken: string) {
   return apiFetch<RegisterOrganizationResponse>('/organizations/register', {
     method: 'POST',
     body: JSON.stringify(payload)
-  });
+  }, accessToken);
 }
 
 export function fetchMyOrganization(accessToken: string) {

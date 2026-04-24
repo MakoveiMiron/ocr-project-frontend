@@ -8,6 +8,7 @@ const accessTokenStorageKey = 'ocr_access_token';
 const accessTokenExpiresAtStorageKey = 'ocr_access_token_expires_at';
 const oidcStateStorageKey = 'ocr_oidc_state';
 const oidcNonceStorageKey = 'ocr_oidc_nonce';
+const postLoginRedirectStorageKey = 'ocr_post_login_redirect';
 
 function inBrowser() {
   return typeof window !== 'undefined';
@@ -90,7 +91,7 @@ export function hasAccessToken() {
   return true;
 }
 
-export async function startOidcLogin() {
+export async function startOidcLogin(postLoginRedirect = '/dashboard') {
   const state = generateRandomString();
   const nonce = generateRandomString();
 
@@ -100,6 +101,7 @@ export async function startOidcLogin() {
 
   window.sessionStorage.setItem(oidcStateStorageKey, state);
   window.sessionStorage.setItem(oidcNonceStorageKey, nonce);
+  window.sessionStorage.setItem(postLoginRedirectStorageKey, postLoginRedirect);
 
   const response = await createAuthorizationUrl({ state, nonce });
 
@@ -127,6 +129,16 @@ export async function completeOidcCallback(code: string, state: string): Promise
   window.sessionStorage.removeItem(oidcNonceStorageKey);
 
   return tokenResponse;
+}
+
+export function consumePostLoginRedirect() {
+  if (!inBrowser()) {
+    return '/dashboard';
+  }
+
+  const redirectPath = window.sessionStorage.getItem(postLoginRedirectStorageKey) || '/dashboard';
+  window.sessionStorage.removeItem(postLoginRedirectStorageKey);
+  return redirectPath;
 }
 
 export async function getCurrentUserProfile(): Promise<AuthMeResponse> {
