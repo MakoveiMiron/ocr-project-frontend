@@ -5,17 +5,27 @@ import { Hero } from '@/components/Hero';
 import { DocumentTable } from '@/components/DocumentTable';
 import { UploadForm } from '@/components/UploadForm';
 import { apiFetch } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
+import { getAccessToken, hasAccessToken } from '@/lib/auth';
 import { DocumentSummary } from '@/lib/types';
 
 export default function HomePage() {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [error, setError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsAuthenticated(hasAccessToken());
+  }, []);
 
   const loadDocuments = useCallback(async () => {
+    if (!hasAccessToken()) {
+      setDocuments([]);
+      return;
+    }
+
     try {
       const token = await getAccessToken();
-      const docs = await apiFetch<DocumentSummary[]>('/documents/', undefined, token);
+      const docs = await apiFetch<DocumentSummary[]>('/documents', undefined, token);
       setDocuments(docs);
       setError('');
     } catch (err) {
@@ -24,17 +34,18 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     void loadDocuments();
     const interval = setInterval(() => void loadDocuments(), 8000);
     return () => clearInterval(interval);
-  }, [loadDocuments]);
+  }, [isAuthenticated, loadDocuments]);
 
   return (
     <>
       <Hero />
       <section className="container" style={{ paddingBottom: 40 }}>
         <div className="grid grid-2">
-          <UploadForm onComplete={loadDocuments} />
+          <UploadForm onComplete={loadDocuments} isAuthenticated={isAuthenticated} />
           <div className="card">
             <h2 className="section-title">How it works</h2>
             <ol className="small" style={{ paddingLeft: 20, marginTop: 0 }}>
@@ -48,6 +59,11 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+        {!isAuthenticated ? (
+          <p className="small mt-16" style={{ color: 'var(--danger)' }}>
+            You must sign in to upload and convert files.
+          </p>
+        ) : null}
         {error ? <p className="small mt-16" style={{ color: 'var(--danger)' }}>{error}</p> : null}
         <div style={{ marginTop: 16 }}>
           <DocumentTable documents={documents} />

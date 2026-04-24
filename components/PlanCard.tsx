@@ -9,11 +9,16 @@ interface CheckoutResponse {
   checkout_url: string;
 }
 
-export function PlanCard({ plan }: { plan: Plan }) {
+export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticated: boolean }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function handleSelectPlan() {
+    if (!isAuthenticated) {
+      setError('Please sign in before selecting a plan.');
+      return;
+    }
+
     setBusy(true);
     setError('');
     try {
