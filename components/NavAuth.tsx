@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { clearAccessToken, getCurrentUserProfile, hasAccessToken } from '@/lib/auth';
+import { withBasePath } from '@/lib/basePath';
 
 export function NavAuth() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -26,7 +27,7 @@ export function NavAuth() {
     clearAccessToken();
     setAuthenticated(false);
     setName('');
-    window.location.href = '/login';
+    window.location.href = withBasePath('/login');
   }
 
   if (!authenticated) {

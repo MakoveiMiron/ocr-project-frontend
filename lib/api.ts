@@ -1,4 +1,5 @@
 import { clearAccessToken } from '@/lib/auth';
+import { withBasePath } from '@/lib/basePath';
 import { config } from '@/lib/config';
 import {
   AuthMeResponse,
@@ -61,7 +62,7 @@ async function assertResponseOk(response: Response) {
 
   if (response.status === 401 && typeof window !== 'undefined') {
     clearAccessToken();
-    window.location.href = '/login?reason=unauthorized';
+    window.location.href = withBasePath('/login?reason=unauthorized');
   }
 
   const text = await response.text();
