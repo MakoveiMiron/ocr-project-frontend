@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { completeOidcCallback } from '@/lib/auth';
+import { completeOidcCallback, consumePostLoginRedirect } from '@/lib/auth';
 
 function LoginCallbackContent() {
   const [message, setMessage] = useState('Finalizing sign in...');
@@ -31,8 +31,9 @@ function LoginCallbackContent() {
 
       try {
         await completeOidcCallback(code, state);
-        setMessage('Sign in successful. Redirecting to your dashboard...');
-        router.replace('/dashboard');
+        const redirectPath = consumePostLoginRedirect();
+        setMessage('Sign in successful. Redirecting...');
+        router.replace(redirectPath);
       } catch (error) {
         setFailed(true);
         setMessage(error instanceof Error ? error.message : 'Sign in failed during callback exchange.');
