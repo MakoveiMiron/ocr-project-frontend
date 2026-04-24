@@ -65,9 +65,15 @@ export async function getAccessToken(): Promise<string> {
   throw new Error('Authentication required. Please sign in to continue.');
 }
 
+export function markSessionActive() {
+  if (!inBrowser()) return;
+  window.sessionStorage.setItem(sessionActiveStorageKey, 'true');
+}
+
 export function setAccessToken(token: string, expiresInSeconds?: number) {
   if (!inBrowser()) return;
   window.sessionStorage.setItem(accessTokenStorageKey, token);
+  markSessionActive();
   setTokenExpiry(expiresInSeconds);
 }
 
@@ -100,7 +106,9 @@ export async function signInWithSession(email: string, password: string) {
     return;
   }
 
-  throw new Error('Login response did not include an access token.');
+  if (inBrowser()) {
+    markSessionActive();
+  }
 }
 
 export async function startOidcLogin(postLoginRedirect = '/dashboard') {
@@ -153,7 +161,13 @@ export function consumePostLoginRedirect() {
 }
 
 export async function getCurrentUserProfile(): Promise<AuthMeResponse> {
-  const token = await getAccessToken();
+  let token = '';
+
+  try {
+    token = await getAccessToken();
+  } catch {
+    token = '';
+  }
 
   try {
     return await fetchAuthMe(token);
