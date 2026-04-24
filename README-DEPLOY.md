@@ -41,3 +41,6 @@ NEXT_PUBLIC_API_BASE_URL=https://example.com/api/v1 npm run build:github-pages
 
 - Static hosting cannot run Next.js API routes.
 - The frontend calls the backend directly using `NEXT_PUBLIC_API_BASE_URL`.
+- Because calls are made directly from the browser, your backend **must** allow your frontend origin in CORS.
+  - Example: if deployed at `https://makoveimiron.github.io`, return `Access-Control-Allow-Origin: https://makoveimiron.github.io` for API and preflight (`OPTIONS`) responses.
+  - If this header is missing, the browser blocks requests before your frontend can receive the response.
