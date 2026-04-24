@@ -14,6 +14,8 @@ export interface OrganizationSummary {
   role: string;
 }
 
+export type AccountType = 'individual' | 'company';
+
 export interface OrganizationMember {
   user_id: string;
   email: string;
@@ -34,19 +36,21 @@ export interface ProcessingJobStatus {
   error_message?: string | null;
 }
 
-export interface DocumentDetail extends DocumentSummary {
-  document_id?: string;
-  document_status?: string;
-  block_count?: number;
-  retention_deadline?: string | null;
-  cleanup_status?: string;
-  complexity_scores?: Record<string, unknown>;
-  ocr_routing_decisions?: Array<{ block_id: string; engine: string; reason: string }> | Record<string, unknown>;
-  docx_available?: boolean;
-  job_id?: string;
-  job_status?: string;
-  current_step?: string;
-  error_message?: string | null;
+export interface DocumentDetail {
+  document_id: string;
+  original_filename: string;
+  document_status: string;
+  job_id: string | null;
+  job_status: string | null;
+  current_step: string | null;
+  block_count: number | null;
+  complexity_scores: Record<string, unknown> | null;
+  ocr_routing_decisions: Array<{ block_id: string; engine: string; reason: string }> | Record<string, unknown> | null;
+  retention_deadline: string | null;
+  cleanup_status: string | null;
+  docx_available: boolean;
+  created_at: string;
+  error_message: string | null;
   latest_job?: ProcessingJobStatus;
 }
 
@@ -65,4 +69,48 @@ export interface AuthMeResponse {
   email: string;
   name: string;
   organization_id: string;
+}
+
+export interface RegisterOrganizationRequest {
+  account_type: AccountType;
+  organization_name?: string;
+  full_name?: string;
+  billing_email?: string;
+  plan_code: PlanCode;
+}
+
+export interface RegisterOrganizationResponse {
+  organization_id: string;
+  account_type: AccountType;
+  plan_code: PlanCode;
+  checkout_url?: string;
+}
+
+export interface UploadInitRequest {
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+}
+
+export interface UploadInitResponse {
+  document_id: string;
+  upload_url: string;
+  storage_key: string;
+}
+
+export interface ProcessDocumentRequest {
+  engine_policy: string;
+}
+
+export interface ProcessDocumentResponse {
+  job_id: string;
+  status: string;
+}
+
+export interface BillingCheckoutResponse {
+  checkout_url: string;
+}
+
+export interface BillingPortalResponse {
+  portal_url: string;
 }

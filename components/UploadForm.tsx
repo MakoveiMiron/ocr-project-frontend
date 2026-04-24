@@ -1,14 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { fetchDocumentDetail, initDocumentUpload, processDocument } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
-
-interface UploadInitResponse {
-  document_id: string;
-  upload_url: string;
-  storage_key: string;
-}
 
 type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 type FileJobState = {
@@ -16,13 +10,6 @@ type FileJobState = {
   stage: UploadStage;
   message: string;
 };
-
-interface DocumentStatusResponse {
-  document_status?: string;
-  job_status?: string;
-  current_step?: string;
-  docx_available?: boolean;
-}
 
 export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () => Promise<void> | void; isAuthenticated: boolean }) {
   const [files, setFiles] = useState<File[]>([]);
@@ -37,7 +24,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
 
   async function pollUntilFinished(documentId: string, token: string, fileName: string) {
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      const detail = await apiFetch<DocumentStatusResponse>(`/documents/${documentId}`, undefined, token);
+      const detail = await fetchDocumentDetail(documentId, token);
       const status = detail.document_status ?? detail.job_status ?? 'processing';
       const step = detail.current_step ?? 'queued';
       const normalizedStatus = status.toLowerCase();
@@ -79,18 +66,11 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
       const token = await getAccessToken();
       setFileStatuses(files.map((file) => ({ fileName: file.name, stage: 'uploading', message: 'Uploading...' })));
       for (const file of files) {
-        const init = await apiFetch<UploadInitResponse>(
-          '/documents/upload/init',
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              filename: file.name,
-              content_type: file.type || 'application/pdf',
-              size_bytes: file.size
-            })
-          },
-          token
-        );
+        const init = await initDocumentUpload({
+          filename: file.name,
+          content_type: file.type || 'application/pdf',
+          size_bytes: file.size
+        }, token);
 
         const isLocalUpload = init.upload_url.includes('/local-upload');
         const uploadResponse = await fetch(
@@ -120,14 +100,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
           item.fileName === file.name ? { ...item, stage: 'processing', message: 'Queued for OCR processing...' } : item
         )));
         setStage('processing');
-        await apiFetch(
-          `/documents/${init.document_id}/process`,
-          {
-            method: 'POST',
-            body: JSON.stringify({ engine_policy: 'auto' })
-          },
-          token
-        );
+        await processDocument(init.document_id, { engine_policy: 'auto' }, token);
         await pollUntilFinished(init.document_id, token, file.name);
       }
 

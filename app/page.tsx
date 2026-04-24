@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Hero } from '@/components/Hero';
 import { DocumentTable } from '@/components/DocumentTable';
 import { UploadForm } from '@/components/UploadForm';
-import { apiFetch } from '@/lib/api';
+import { fetchDocuments } from '@/lib/api';
 import { getAccessToken, hasAccessToken } from '@/lib/auth';
 import { DocumentSummary } from '@/lib/types';
 
@@ -25,7 +25,7 @@ export default function HomePage() {
 
     try {
       const token = await getAccessToken();
-      const docs = await apiFetch<DocumentSummary[]>('/documents', undefined, token);
+      const docs = await fetchDocuments(token);
       setDocuments(docs);
       setError('');
     } catch (err) {
