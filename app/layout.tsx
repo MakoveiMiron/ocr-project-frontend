@@ -1,6 +1,7 @@
 import './globals.css';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NavAuth } from '@/components/NavAuth';
 
 export const metadata = {
   title: 'PDF to DOCX Converter',
@@ -17,8 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="links">
               <Link href="/">Home</Link>
               <Link href="/subscription">Subscription</Link>
-              <Link href="/login" className="btn btn-secondary">Sign in</Link>
-              <Link href="/register" className="btn btn-primary">Register</Link>
+              <NavAuth />
               <ThemeToggle />
             </div>
           </nav>

@@ -49,3 +49,20 @@ export interface DocumentDetail extends DocumentSummary {
   error_message?: string | null;
   latest_job?: ProcessingJobStatus;
 }
+
+export interface AuthorizationUrlResponse {
+  authorization_url: string;
+}
+
+export interface AuthCallbackResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface AuthMeResponse {
+  id: string;
+  email: string;
+  name: string;
+  organization_id: string;
+}

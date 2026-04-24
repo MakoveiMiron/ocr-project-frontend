@@ -1,3 +1,4 @@
+import { clearAccessToken } from '@/lib/auth';
 import { config } from '@/lib/config';
 
 function buildHeaders(init?: RequestInit, accessToken?: string) {
@@ -6,6 +7,20 @@ function buildHeaders(init?: RequestInit, accessToken?: string) {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
   return headers;
+}
+
+async function assertResponseOk(response: Response) {
+  if (response.ok) {
+    return;
+  }
+
+  if (response.status === 401 && typeof window !== 'undefined') {
+    clearAccessToken();
+    window.location.href = '/login?reason=unauthorized';
+  }
+
+  const text = await response.text();
+  throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?: string): Promise<T> {
@@ -20,10 +35,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     cache: 'no-store'
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
-  }
+  await assertResponseOk(response);
 
   if (response.status === 204) {
     return {} as T;
@@ -39,10 +51,7 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
     cache: 'no-store'
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
-  }
+  await assertResponseOk(response);
 
   return response;
 }
