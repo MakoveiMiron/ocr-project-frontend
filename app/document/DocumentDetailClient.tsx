@@ -66,9 +66,11 @@ export default function DocumentDetailClient() {
         {!document ? <p className="small">Loading...</p> : (
           <div className="grid" style={{ gap: 12 }}>
             <p className="small"><strong>File:</strong> {document.original_filename}</p>
-            <p className="small"><strong>Status:</strong> {document.status}</p>
-            <p className="small"><strong>OCR step:</strong> {document.latest_job?.current_step ?? '-'}</p>
+            <p className="small"><strong>Status:</strong> {document.document_status ?? document.status}</p>
+            <p className="small"><strong>Job status:</strong> {document.job_status ?? document.latest_job?.job_status ?? '-'}</p>
+            <p className="small"><strong>OCR step:</strong> {document.current_step ?? document.latest_job?.current_step ?? '-'}</p>
             <p className="small"><strong>DOCX ready:</strong> {document.docx_available ? 'Yes' : 'No'}</p>
+            <p className="small"><strong>Retention deadline:</strong> {document.retention_deadline ?? '-'}</p>
           </div>
         )}
       </div>

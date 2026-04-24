@@ -4,9 +4,11 @@ import { DocumentSummary } from '@/lib/types';
 const STATUS_LABELS: Record<string, string> = {
   queued: 'processing',
   uploaded: 'processing',
+  processing: 'processing',
   running: 'processing',
   completed: 'completed',
-  failed: 'failed'
+  failed: 'failed',
+  expired: 'expired'
 };
 
 export function DocumentTable({ documents }: { documents: DocumentSummary[] }) {
