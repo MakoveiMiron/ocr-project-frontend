@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { clearAccessToken, getCurrentUserProfile } from '@/lib/auth';
+import { getCurrentUserProfile, signOut } from '@/lib/auth';
 import { AuthMeResponse } from '@/lib/types';
 
 export function UserProfile() {
@@ -23,8 +23,8 @@ export function UserProfile() {
     void loadProfile();
   }, []);
 
-  function logout() {
-    clearAccessToken();
+  async function logout() {
+    await signOut();
     router.replace('/login');
   }
 

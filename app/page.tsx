@@ -5,7 +5,6 @@ import { Hero } from '@/components/Hero';
 import { DocumentTable } from '@/components/DocumentTable';
 import { UploadForm } from '@/components/UploadForm';
 import { fetchDocuments } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
 import { DocumentSummary } from '@/lib/types';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 
@@ -21,8 +20,7 @@ export default function HomePage() {
     }
 
     try {
-      const token = await getAccessToken();
-      const docs = await fetchDocuments(token);
+      const docs = await fetchDocuments();
       setDocuments(docs);
       setError('');
     } catch (err) {

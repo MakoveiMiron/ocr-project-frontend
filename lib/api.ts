@@ -22,27 +22,6 @@ import {
 
 const accessTokenStorageKey = 'ocr_access_token';
 
-const PUBLIC_ENDPOINTS = new Set([
-  '/auth/login',
-  '/auth/authorization-url',
-  '/auth/callback',
-  '/organizations/register'
-]);
-
-function isPublicEndpoint(path: string) {
-  return PUBLIC_ENDPOINTS.has(path);
-}
-
-function assertBearerHeader(path: string, headers: Headers) {
-  if (isPublicEndpoint(path)) {
-    return;
-  }
-
-  if (!headers.has('Authorization')) {
-    throw new Error('Missing Bearer token. Please sign in again.');
-  }
-}
-
 function getStoredAccessToken() {
   if (typeof window === 'undefined') {
     return '';
@@ -114,8 +93,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     headers.set('Content-Type', 'application/json');
   }
 
-  assertBearerHeader(path, headers);
-
   let response: Response;
   try {
     response = await fetch(formatRequestUrl(path), {
@@ -139,7 +116,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
 
 export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?: string): Promise<Response> {
   const headers = buildHeaders(init, accessToken);
-  assertBearerHeader(path, headers);
 
   let response: Response;
   try {
@@ -179,7 +155,7 @@ export function createSessionLogin(payload: { email: string; password: string })
   });
 }
 
-export function fetchAuthMe(accessToken: string) {
+export function fetchAuthMe(accessToken?: string) {
   return apiFetch<AuthMeResponse>('/auth/me', undefined, accessToken);
 }
 
@@ -190,44 +166,48 @@ export function registerOrganization(payload: RegisterOrganizationRequest, acces
   }, accessToken);
 }
 
-export function fetchMyOrganization(accessToken: string) {
+export function fetchMyOrganization(accessToken?: string) {
   return apiFetch<OrganizationSummary>('/organizations/me', undefined, accessToken);
 }
 
-export function fetchOrganizationMembers(organizationId: string, accessToken: string) {
+export function fetchOrganizationMembers(organizationId: string, accessToken?: string) {
   return apiFetch<OrganizationMember[]>(`/organizations/${organizationId}/members`, undefined, accessToken);
 }
 
-export function initDocumentUpload(payload: UploadInitRequest, accessToken: string) {
+export function initDocumentUpload(payload: UploadInitRequest, accessToken?: string) {
   return apiFetch<UploadInitResponse>('/documents/upload/init', {
     method: 'POST',
     body: JSON.stringify(payload)
   }, accessToken);
 }
 
-export function processDocument(documentId: string, payload: ProcessDocumentRequest, accessToken: string) {
+export function processDocument(documentId: string, payload: ProcessDocumentRequest, accessToken?: string) {
   return apiFetch<ProcessDocumentResponse>(`/documents/${documentId}/process`, {
     method: 'POST',
     body: JSON.stringify(payload)
   }, accessToken);
 }
 
-export function fetchDocuments(accessToken: string) {
+export function fetchDocuments(accessToken?: string) {
   return apiFetch<DocumentSummary[]>('/documents', undefined, accessToken);
 }
 
-export function fetchDocumentDetail(documentId: string, accessToken: string) {
+export function fetchDocumentDetail(documentId: string, accessToken?: string) {
   return apiFetch<DocumentDetail>(`/documents/${documentId}`, undefined, accessToken);
 }
 
-export function downloadDocument(documentId: string, accessToken: string) {
+export function downloadDocument(documentId: string, accessToken?: string) {
   return apiFetchRaw(`/documents/${documentId}/download`, undefined, accessToken);
 }
 
-export function createBillingCheckout(planCode: string, accessToken: string) {
+export function createBillingCheckout(planCode: string, accessToken?: string) {
   return apiFetch<BillingCheckoutResponse>(`/billing/checkout/${planCode}`, { method: 'POST' }, accessToken);
 }
 
-export function createBillingPortal(accessToken: string) {
+export function createBillingPortal(accessToken?: string) {
   return apiFetch<BillingPortalResponse>('/billing/portal', { method: 'POST' }, accessToken);
+}
+
+export function logoutSession() {
+  return apiFetch<void>('/auth/logout', { method: 'POST' });
 }

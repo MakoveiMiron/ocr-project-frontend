@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
 import { OrganizationMember, OrganizationSummary } from '@/lib/types';
 
 function MembersContent() {
@@ -14,9 +13,8 @@ function MembersContent() {
   useEffect(() => {
     async function loadMembers() {
       try {
-        const token = await getAccessToken();
-        const org = await fetchMyOrganization(token);
-        const orgMembers = await fetchOrganizationMembers(org.id, token);
+        const org = await fetchMyOrganization();
+        const orgMembers = await fetchOrganizationMembers(org.id);
         setOrganization(org);
         setMembers(orgMembers);
         setMessage('');

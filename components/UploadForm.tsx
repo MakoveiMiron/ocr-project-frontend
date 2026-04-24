@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { fetchDocumentDetail, initDocumentUpload, processDocument } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
+import { getOptionalAccessToken } from '@/lib/auth';
 
 type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 type FileJobState = {
@@ -22,7 +22,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
     await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async function pollUntilFinished(documentId: string, token: string, fileName: string) {
+  async function pollUntilFinished(documentId: string, token: string | undefined, fileName: string) {
     for (let attempt = 0; attempt < 120; attempt += 1) {
       const detail = await fetchDocumentDetail(documentId, token);
       const status = detail.document_status ?? detail.job_status ?? 'processing';
@@ -63,7 +63,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
     setStage('uploading');
     setMessage('Uploading files...');
     try {
-      const token = await getAccessToken();
+      const token = await getOptionalAccessToken();
       setFileStatuses(files.map((file) => ({ fileName: file.name, stage: 'uploading', message: 'Uploading...' })));
       for (const file of files) {
         const init = await initDocumentUpload({
@@ -81,7 +81,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
                 formData.append('file', file);
                 return {
                   method: 'PUT',
-                  headers: { Authorization: `Bearer ${token}` },
+                  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                   body: formData
                 };
               })()

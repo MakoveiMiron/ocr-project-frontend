@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
-import { registerOrganization } from '@/lib/api';
+import { registerAndSignIn } from '@/lib/auth';
 import { AccountType, PlanCode } from '@/lib/types';
 
 export default function RegisterPage() {
@@ -25,6 +25,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     setMessage('');
 
+    let didRedirect = false;
     try {
       const payload = {
         account_type: form.account_type,
@@ -36,18 +37,27 @@ export default function RegisterPage() {
         plan_code: form.plan_code
       };
 
-      const response = await registerOrganization(payload);
+      const response = await registerAndSignIn(payload);
 
       if (response.checkout_url) {
+        didRedirect = true;
         window.location.href = response.checkout_url;
         return;
       }
 
-      setMessage('Registration completed. Please sign in to start conversion.');
+      didRedirect = true;
+      window.location.href = '/dashboard';
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Registration failed.');
+      const rawMessage = error instanceof Error ? error.message : 'Registration failed.';
+      if (rawMessage.includes('409')) {
+        setMessage('This email is already registered. Please sign in.');
+      } else {
+        setMessage(rawMessage);
+      }
     } finally {
-      setIsSubmitting(false);
+      if (!didRedirect) {
+        setIsSubmitting(false);
+      }
     }
   }
 
@@ -56,7 +66,7 @@ export default function RegisterPage() {
       <form className="card auth-card" onSubmit={handleSubmit}>
         <h1 style={{ marginTop: 0, textAlign: 'center' }}>Create your account</h1>
         <p className="small" style={{ textAlign: 'center' }}>
-          Public registration is enabled. Create an account first, then sign in from the same browser session.
+          Public registration is enabled. Create your account. You will be signed in automatically.
         </p>
 
         <label className="small">Account type</label>

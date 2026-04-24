@@ -1,5 +1,17 @@
-import { AuthCallbackResponse, AuthMeResponse } from '@/lib/types';
-import { createAuthorizationUrl, createSessionLogin, exchangeAuthCallback, fetchAuthMe } from '@/lib/api';
+import {
+  AuthCallbackResponse,
+  AuthMeResponse,
+  RegisterOrganizationRequest,
+  RegisterOrganizationResponse
+} from '@/lib/types';
+import {
+  createAuthorizationUrl,
+  createSessionLogin,
+  exchangeAuthCallback,
+  fetchAuthMe,
+  logoutSession,
+  registerOrganization
+} from '@/lib/api';
 
 const devAuthEnabled = process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const devAccessToken = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN || 'dev-token';
@@ -66,6 +78,15 @@ export async function getAccessToken(): Promise<string> {
   throw new Error('Authentication required. Please sign in to continue.');
 }
 
+export async function getOptionalAccessToken(): Promise<string | undefined> {
+  try {
+    const token = await getAccessToken();
+    return token || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function markSessionActive() {
   if (!inBrowser()) return;
   window.sessionStorage.setItem(sessionActiveStorageKey, 'true');
@@ -105,11 +126,27 @@ export async function signInWithSession(email: string, password: string) {
   const response = await createSessionLogin({ email, password });
   if (response.access_token) {
     setAccessToken(response.access_token, response.expires_in);
-    return;
+  } else if (inBrowser()) {
+    markSessionActive();
+  }
+}
+
+export async function registerAndSignIn(payload: RegisterOrganizationRequest): Promise<RegisterOrganizationResponse> {
+  const response = await registerOrganization(payload);
+  if (response.access_token) {
+    setAccessToken(response.access_token, response.expires_in);
+  } else if (inBrowser()) {
+    markSessionActive();
   }
 
-  if (inBrowser()) {
-    markSessionActive();
+  return response;
+}
+
+export async function signOut() {
+  try {
+    await logoutSession();
+  } finally {
+    clearAccessToken();
   }
 }
 
@@ -163,16 +200,10 @@ export function consumePostLoginRedirect() {
 }
 
 export async function getCurrentUserProfile(): Promise<AuthMeResponse> {
-  let token = '';
-
   try {
-    token = await getAccessToken();
-  } catch {
-    token = '';
-  }
-
-  try {
-    return await fetchAuthMe(token);
+    const profile = await fetchAuthMe();
+    markSessionActive();
+    return profile;
   } catch (error) {
     if (error instanceof Error && error.message.includes('401')) {
       clearAccessToken();

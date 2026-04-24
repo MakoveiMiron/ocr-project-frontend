@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { clearAccessToken } from '@/lib/auth';
+import { signOut } from '@/lib/auth';
 import { withBasePath } from '@/lib/basePath';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 
 export function NavAuth() {
   const { isAuthenticated, isLoading, profile } = useAuthStatus();
 
-  function onLogout() {
-    clearAccessToken();
+  async function onLogout() {
+    await signOut();
     window.location.href = withBasePath('/login');
   }
 
