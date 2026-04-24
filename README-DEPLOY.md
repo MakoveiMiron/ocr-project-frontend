@@ -1,18 +1,38 @@
-# Frontend notes
+# Frontend deploy notes
 
-For local development:
+This app now uses a static Next.js export (`output: 'export'`) so it can be deployed to **GitHub Pages** and served in production mode (no `next dev`).
+
+## 1) Build locally for GitHub Pages
 
 ```bash
-cp .env.example .env.local
 npm install
-npm run dev
+NEXT_PUBLIC_API_BASE_URL=https://web-production-3a8489.up.railway.app/api/v1 npm run build:github-pages
 ```
 
-For a deployed backend, set server-side target URL:
+Build output is generated in `out/`.
+
+## 2) Configure repository path (required for project pages)
+
+If your repo is hosted at `https://<user>.github.io/<repo>`, set:
 
 ```bash
-API_BASE_URL=https://web-production-3a8489.up.railway.app/api/v1
+NEXT_PUBLIC_BASE_PATH=/<repo>
 ```
 
-`NEXT_PUBLIC_API_BASE_URL` is optional and only used on the server as a fallback.
-Client-side requests always go through the Next.js `/api/v1/*` proxy to avoid browser CORS issues.
+Then build with:
+
+```bash
+NEXT_PUBLIC_BASE_PATH=/<repo> NEXT_PUBLIC_API_BASE_URL=https://web-production-3a8489.up.railway.app/api/v1 npm run build:github-pages
+```
+
+If you deploy to a custom domain or user root site (`https://<user>.github.io`), leave `NEXT_PUBLIC_BASE_PATH` empty.
+
+## 3) Deploy `out/` to GitHub Pages
+
+Use your preferred method (GitHub Actions, `gh-pages` branch, etc.) and publish the contents of `out/`.
+
+## API notes
+
+- Static hosting cannot run Next.js API routes.
+- The frontend calls the backend directly using `NEXT_PUBLIC_API_BASE_URL`.
+- Set `NEXT_PUBLIC_API_BASE_URL` to your deployed backend API base (including `/api/v1`).

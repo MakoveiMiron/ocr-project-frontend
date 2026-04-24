@@ -1,23 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiFetch, apiFetchRaw } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { DocumentDetail } from '@/lib/types';
 
-export default function DocumentDetailPage() {
-  const { documentId } = useParams<{ documentId: string }>();
+export default function DocumentDetailClient() {
   const searchParams = useSearchParams();
+  const documentId = useMemo(() => searchParams.get('documentId') ?? '', [searchParams]);
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (!documentId) {
+      setMessage('Missing document ID. Open this page from the Recent conversions table.');
+      setDocument(null);
+      return;
+    }
+
     async function load() {
       try {
         const token = await getAccessToken();
         const detail = await apiFetch<DocumentDetail>(`/documents/${documentId}`, undefined, token);
         setDocument(detail);
+        setMessage('');
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Failed to fetch status.');
       }
@@ -30,7 +37,7 @@ export default function DocumentDetailPage() {
 
   useEffect(() => {
     async function maybeDownload() {
-      if (searchParams.get('download') !== '1') return;
+      if (searchParams.get('download') !== '1' || !documentId) return;
       try {
         const token = await getAccessToken();
         const response = await apiFetchRaw(`/documents/${documentId}/download`, undefined, token);

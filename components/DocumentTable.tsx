@@ -31,9 +31,9 @@ export function DocumentTable({ documents }: { documents: DocumentSummary[] }) {
                 <td>{doc.original_filename}</td>
                 <td>{status}</td>
                 <td className="actions-row">
-                  <Link className="btn btn-secondary" href={`/documents/${doc.id}`}>View</Link>
+                  <Link className="btn btn-secondary" href={`/document?documentId=${doc.id}`}>View</Link>
                   {status === 'completed' ? (
-                    <Link className="btn btn-primary" href={`/documents/${doc.id}?download=1`}>Download DOCX</Link>
+                    <Link className="btn btn-primary" href={`/document?documentId=${doc.id}&download=1`}>Download DOCX</Link>
                   ) : null}
                 </td>
               </tr>
