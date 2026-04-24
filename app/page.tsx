@@ -1,34 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Hero } from '@/components/Hero';
 import { DocumentTable } from '@/components/DocumentTable';
 import { UploadForm } from '@/components/UploadForm';
 import { fetchDocuments } from '@/lib/api';
-import { getAccessToken, hasAccessToken } from '@/lib/auth';
+import { getAccessToken } from '@/lib/auth';
 import { DocumentSummary } from '@/lib/types';
+import { useAuthStatus } from '@/lib/useAuthStatus';
 
 export default function HomePage() {
-  const router = useRouter();
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [error, setError] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
-  useEffect(() => {
-    const loggedIn = hasAccessToken();
-    if (!loggedIn) {
-      router.replace('/login');
-      return;
-    }
-
-    setIsAuthenticated(true);
-    setIsCheckingAuth(false);
-  }, [router]);
+  const { isAuthenticated, isLoading } = useAuthStatus();
 
   const loadDocuments = useCallback(async () => {
-    if (!hasAccessToken()) {
+    if (!isAuthenticated) {
       setDocuments([]);
       return;
     }
@@ -41,7 +28,7 @@ export default function HomePage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load conversions.');
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -49,14 +36,6 @@ export default function HomePage() {
     const interval = setInterval(() => void loadDocuments(), 8000);
     return () => clearInterval(interval);
   }, [isAuthenticated, loadDocuments]);
-
-  if (isCheckingAuth) {
-    return (
-      <section className="container" style={{ paddingBottom: 40 }}>
-        <div className="card"><p className="small">Checking authentication…</p></div>
-      </section>
-    );
-  }
 
   return (
     <>
@@ -77,7 +56,8 @@ export default function HomePage() {
             </p>
           </div>
         </div>
-        {!isAuthenticated ? (
+        {isLoading ? <p className="small mt-16">Checking authentication…</p> : null}
+        {!isAuthenticated && !isLoading ? (
           <p className="small mt-16" style={{ color: 'var(--danger)' }}>
             You must sign in to upload and convert files.
           </p>

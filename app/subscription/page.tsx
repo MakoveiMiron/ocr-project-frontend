@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PlanCard } from '@/components/PlanCard';
 import { createBillingPortal } from '@/lib/api';
-import { getAccessToken, hasAccessToken } from '@/lib/auth';
+import { getAccessToken } from '@/lib/auth';
+import { useAuthStatus } from '@/lib/useAuthStatus';
 import { Plan } from '@/lib/types';
 
 const plans: Plan[] = [
@@ -30,7 +31,7 @@ const plans: Plan[] = [
 
 export default function SubscriptionPage() {
   const [message, setMessage] = useState('');
-  const [isAuthenticated] = useState(hasAccessToken());
+  const { isAuthenticated, isLoading } = useAuthStatus();
 
   async function openPortal() {
     if (!isAuthenticated) {
@@ -55,7 +56,8 @@ export default function SubscriptionPage() {
           Choose a plan and continue to Stripe checkout. Subscription renewals/resubscriptions are handled on the backend
           via Stripe webhooks; this frontend only initiates checkout and opens the billing portal.
         </p>
-        {!isAuthenticated ? <p className="small" style={{ color: 'var(--danger)' }}>Sign in is required for billing actions.</p> : null}
+        {isLoading ? <p className="small">Checking session...</p> : null}
+        {!isAuthenticated && !isLoading ? <p className="small" style={{ color: 'var(--danger)' }}>Sign in is required for billing actions.</p> : null}
         <button className="btn btn-secondary" onClick={openPortal}>Open billing portal</button>
         {!isAuthenticated ? <Link href="/login" className="btn btn-primary" style={{ marginLeft: 8 }}>Sign in</Link> : null}
         {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
