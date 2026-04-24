@@ -1,27 +1,15 @@
-import { AuthCallbackResponse, AuthMeResponse } from '@/lib/types';
-import { createAuthorizationUrl, exchangeAuthCallback, fetchAuthMe } from '@/lib/api';
+import { AuthMeResponse } from '@/lib/types';
+import { createSessionLogin, fetchAuthMe } from '@/lib/api';
 
 const devAuthEnabled = process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const devAccessToken = process.env.NEXT_PUBLIC_DEV_ACCESS_TOKEN || 'dev-token';
 
 const accessTokenStorageKey = 'ocr_access_token';
 const accessTokenExpiresAtStorageKey = 'ocr_access_token_expires_at';
-const oidcStateStorageKey = 'ocr_oidc_state';
-const oidcNonceStorageKey = 'ocr_oidc_nonce';
+const sessionActiveStorageKey = 'ocr_session_active';
 
 function inBrowser() {
   return typeof window !== 'undefined';
-}
-
-export function generateRandomString(length = 32) {
-  if (!inBrowser()) {
-    return '';
-  }
-
-  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const bytes = new Uint8Array(length);
-  window.crypto.getRandomValues(bytes);
-  return Array.from(bytes).map((byte) => charset[byte % charset.length]).join('');
 }
 
 function setTokenExpiry(expiresInSeconds?: number) {
@@ -56,6 +44,10 @@ export async function getAccessToken(): Promise<string> {
     if (token && isTokenExpired()) {
       clearAccessToken();
     }
+
+    if (window.sessionStorage.getItem(sessionActiveStorageKey) === 'true') {
+      return '';
+    }
   }
 
   if (devAuthEnabled) {
@@ -68,6 +60,7 @@ export async function getAccessToken(): Promise<string> {
 export function setAccessToken(token: string, expiresInSeconds?: number) {
   if (!inBrowser()) return;
   window.sessionStorage.setItem(accessTokenStorageKey, token);
+  window.sessionStorage.setItem(sessionActiveStorageKey, 'true');
   setTokenExpiry(expiresInSeconds);
 }
 
@@ -75,10 +68,15 @@ export function clearAccessToken() {
   if (!inBrowser()) return;
   window.sessionStorage.removeItem(accessTokenStorageKey);
   window.sessionStorage.removeItem(accessTokenExpiresAtStorageKey);
+  window.sessionStorage.removeItem(sessionActiveStorageKey);
 }
 
 export function hasAccessToken() {
   if (!inBrowser()) return false;
+  if (window.sessionStorage.getItem(sessionActiveStorageKey) === 'true') {
+    return true;
+  }
+
   const token = window.sessionStorage.getItem(accessTokenStorageKey);
   if (!token) return false;
 
@@ -90,43 +88,16 @@ export function hasAccessToken() {
   return true;
 }
 
-export async function startOidcLogin() {
-  const state = generateRandomString();
-  const nonce = generateRandomString();
-
-  if (!state || !nonce) {
-    throw new Error('Login is only available in the browser.');
+export async function signInWithSession(email: string, password: string) {
+  const response = await createSessionLogin({ email, password });
+  if (response.access_token) {
+    setAccessToken(response.access_token, response.expires_in);
+    return;
   }
 
-  window.sessionStorage.setItem(oidcStateStorageKey, state);
-  window.sessionStorage.setItem(oidcNonceStorageKey, nonce);
-
-  const response = await createAuthorizationUrl({ state, nonce });
-
-  if (!response.authorization_url) {
-    throw new Error('Missing authorization URL from backend.');
+  if (inBrowser()) {
+    window.sessionStorage.setItem(sessionActiveStorageKey, 'true');
   }
-
-  window.location.href = response.authorization_url;
-}
-
-export async function completeOidcCallback(code: string, state: string): Promise<AuthCallbackResponse> {
-  if (!inBrowser()) {
-    throw new Error('Callback handling is only available in the browser.');
-  }
-
-  const expectedState = window.sessionStorage.getItem(oidcStateStorageKey);
-  if (!expectedState || expectedState !== state) {
-    throw new Error('State validation failed. Please try signing in again.');
-  }
-
-  const tokenResponse = await exchangeAuthCallback({ code, state });
-  setAccessToken(tokenResponse.access_token, tokenResponse.expires_in);
-
-  window.sessionStorage.removeItem(oidcStateStorageKey);
-  window.sessionStorage.removeItem(oidcNonceStorageKey);
-
-  return tokenResponse;
 }
 
 export async function getCurrentUserProfile(): Promise<AuthMeResponse> {

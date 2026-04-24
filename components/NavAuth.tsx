@@ -41,7 +41,7 @@ export function NavAuth() {
 
   return (
     <>
-      <Link href="/dashboard" className="btn btn-secondary">Dashboard</Link>
+      <Link href="/" className="btn btn-secondary">App</Link>
       {name ? <span className="small">{name}</span> : null}
       <button type="button" className="btn btn-primary" onClick={onLogout}>Logout</button>
     </>

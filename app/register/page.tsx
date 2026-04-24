@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { registerOrganization } from '@/lib/api';
 import { AccountType, PlanCode } from '@/lib/types';
@@ -105,10 +106,13 @@ export default function RegisterPage() {
           <option value="enterprise">Enterprise</option>
         </select>
 
-        <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating account...' : 'Create account'}
-        </button>
-        {message ? <p className="small">{message}</p> : null}
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Create account'}
+            </button>
+            <p className="small" style={{ marginBottom: 0 }}>
+              Already have an account? <Link href="/login">Sign in</Link>
+            </p>
+            {message ? <p className="small">{message}</p> : null}
       </form>
     </section>
   );

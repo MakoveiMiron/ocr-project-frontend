@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Hero } from '@/components/Hero';
 import { DocumentTable } from '@/components/DocumentTable';
 import { UploadForm } from '@/components/UploadForm';
@@ -9,13 +10,22 @@ import { getAccessToken, hasAccessToken } from '@/lib/auth';
 import { DocumentSummary } from '@/lib/types';
 
 export default function HomePage() {
+  const router = useRouter();
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    setIsAuthenticated(hasAccessToken());
-  }, []);
+    const loggedIn = hasAccessToken();
+    if (!loggedIn) {
+      router.replace('/login');
+      return;
+    }
+
+    setIsAuthenticated(true);
+    setIsCheckingAuth(false);
+  }, [router]);
 
   const loadDocuments = useCallback(async () => {
     if (!hasAccessToken()) {
@@ -39,6 +49,14 @@ export default function HomePage() {
     const interval = setInterval(() => void loadDocuments(), 8000);
     return () => clearInterval(interval);
   }, [isAuthenticated, loadDocuments]);
+
+  if (isCheckingAuth) {
+    return (
+      <section className="container" style={{ paddingBottom: 40 }}>
+        <div className="card"><p className="small">Checking authentication…</p></div>
+      </section>
+    );
+  }
 
   return (
     <>
