@@ -1,36 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { clearAccessToken, getCurrentUserProfile, hasAccessToken } from '@/lib/auth';
+import { clearAccessToken } from '@/lib/auth';
 import { withBasePath } from '@/lib/basePath';
+import { useAuthStatus } from '@/lib/useAuthStatus';
 
 export function NavAuth() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [name, setName] = useState('');
-
-  useEffect(() => {
-    const isAuthenticated = hasAccessToken();
-    setAuthenticated(isAuthenticated);
-
-    if (!isAuthenticated) {
-      setName('');
-      return;
-    }
-
-    void getCurrentUserProfile()
-      .then((profile) => setName(profile.name || profile.email))
-      .catch(() => setName(''));
-  }, []);
+  const { isAuthenticated, isLoading, profile } = useAuthStatus();
 
   function onLogout() {
     clearAccessToken();
-    setAuthenticated(false);
-    setName('');
     window.location.href = withBasePath('/login');
   }
 
-  if (!authenticated) {
+  if (isLoading) {
+    return <span className="small">Checking session…</span>;
+  }
+
+  if (!isAuthenticated) {
     return (
       <>
         <Link href="/login" className="btn btn-secondary">Sign in</Link>
@@ -42,7 +29,7 @@ export function NavAuth() {
   return (
     <>
       <Link href="/" className="btn btn-secondary">App</Link>
-      {name ? <span className="small">{name}</span> : null}
+      {profile?.name ? <span className="small">{profile.name}</span> : null}
       <button type="button" className="btn btn-primary" onClick={onLogout}>Logout</button>
     </>
   );

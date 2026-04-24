@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { clearAccessToken, hasAccessToken, signInWithSession } from '@/lib/auth';
+import { clearAccessToken, signInWithSession } from '@/lib/auth';
+import { useAuthStatus } from '@/lib/useAuthStatus';
 
 function LoginContent() {
   const [message, setMessage] = useState('');
@@ -12,7 +13,7 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
-  const authenticated = hasAccessToken();
+  const { isAuthenticated: authenticated } = useAuthStatus();
 
   const infoMessage = useMemo(() => {
     const reason = searchParams.get('reason');
@@ -48,8 +49,8 @@ function LoginContent() {
   }
 
   return (
-    <section className="container" style={{ paddingBottom: 40 }}>
-      <div className="card" style={{ maxWidth: 520 }}>
+    <section className="container auth-layout" style={{ paddingBottom: 40 }}>
+      <div className="card auth-card">
         <h1 style={{ marginTop: 0 }}>Sign in</h1>
         <p className="small">
           Sign in to your account to upload PDF files, track conversion progress, and download DOCX results.
