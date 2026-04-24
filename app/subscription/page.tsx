@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { PlanCard } from '@/components/PlanCard';
 import { apiFetch } from '@/lib/api';
-import { getAccessToken } from '@/lib/auth';
+import { getAccessToken, hasAccessToken } from '@/lib/auth';
 import { Plan } from '@/lib/types';
 
 const plans: Plan[] = [
@@ -33,8 +34,14 @@ interface BillingPortalResponse {
 
 export default function SubscriptionPage() {
   const [message, setMessage] = useState('');
+  const [isAuthenticated] = useState(hasAccessToken());
 
   async function openPortal() {
+    if (!isAuthenticated) {
+      setMessage('Please sign in before opening the billing portal.');
+      return;
+    }
+
     try {
       const token = await getAccessToken();
       const response = await apiFetch<BillingPortalResponse>('/billing/portal', { method: 'POST' }, token);
@@ -48,12 +55,17 @@ export default function SubscriptionPage() {
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card" style={{ marginBottom: 16 }}>
         <h1 style={{ marginTop: 0 }}>Manage subscription</h1>
-        <p className="small">Update your plan, billing details, or payment method.</p>
+        <p className="small">
+          Choose a plan and continue to Stripe checkout. Subscription renewals/resubscriptions are handled on the backend
+          via Stripe webhooks; this frontend only initiates checkout and opens the billing portal.
+        </p>
+        {!isAuthenticated ? <p className="small" style={{ color: 'var(--danger)' }}>Sign in is required for billing actions.</p> : null}
         <button className="btn btn-secondary" onClick={openPortal}>Open billing portal</button>
+        {!isAuthenticated ? <Link href="/login" className="btn btn-primary" style={{ marginLeft: 8 }}>Sign in</Link> : null}
         {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
       </div>
       <div className="grid grid-3">
-        {plans.map((plan) => <PlanCard key={plan.code} plan={plan} />)}
+        {plans.map((plan) => <PlanCard key={plan.code} plan={plan} isAuthenticated={isAuthenticated} />)}
       </div>
     </section>
   );
