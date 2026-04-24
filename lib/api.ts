@@ -30,10 +30,10 @@ function getStoredAccessToken() {
   return window.sessionStorage.getItem(accessTokenStorageKey) || '';
 }
 
-function buildHeaders(init?: RequestInit, accessToken?: string) {
+function buildHeaders(init?: RequestInit, accessToken?: string, includeAuth = true) {
   const headers = new Headers(init?.headers);
   const resolvedAccessToken = accessToken || getStoredAccessToken();
-  if (resolvedAccessToken) {
+  if (includeAuth && resolvedAccessToken) {
     headers.set('Authorization', `Bearer ${resolvedAccessToken}`);
   }
   return headers;
@@ -87,8 +87,13 @@ async function assertResponseOk(response: Response, path: string) {
   throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?: string): Promise<T> {
-  const headers = buildHeaders(init, accessToken);
+export async function apiFetch<T>(
+  path: string,
+  init?: RequestInit,
+  accessToken?: string,
+  includeAuth = true
+): Promise<T> {
+  const headers = buildHeaders(init, accessToken, includeAuth);
   if (!headers.has('Content-Type') && init?.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
@@ -114,8 +119,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
   return response.json() as Promise<T>;
 }
 
-export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?: string): Promise<Response> {
-  const headers = buildHeaders(init, accessToken);
+export async function apiFetchRaw(
+  path: string,
+  init?: RequestInit,
+  accessToken?: string,
+  includeAuth = true
+): Promise<Response> {
+  const headers = buildHeaders(init, accessToken, includeAuth);
 
   let response: Response;
   try {
@@ -135,24 +145,39 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
 }
 
 export function createAuthorizationUrl(payload: { state: string; nonce: string }) {
-  return apiFetch<AuthorizationUrlResponse>('/auth/authorization-url', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
+  return apiFetch<AuthorizationUrlResponse>(
+    '/auth/authorization-url',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    undefined,
+    false
+  );
 }
 
 export function exchangeAuthCallback(payload: { code: string; state: string }) {
-  return apiFetch<AuthCallbackResponse>('/auth/callback', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
+  return apiFetch<AuthCallbackResponse>(
+    '/auth/callback',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    undefined,
+    false
+  );
 }
 
 export function createSessionLogin(payload: { email: string; password: string }) {
-  return apiFetch<SessionLoginResponse>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
+  return apiFetch<SessionLoginResponse>(
+    '/auth/login',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    undefined,
+    false
+  );
 }
 
 export function fetchAuthMe(accessToken?: string) {
@@ -160,10 +185,15 @@ export function fetchAuthMe(accessToken?: string) {
 }
 
 export function registerOrganization(payload: RegisterOrganizationRequest, accessToken?: string) {
-  return apiFetch<RegisterOrganizationResponse>('/organizations/register', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  }, accessToken);
+  return apiFetch<RegisterOrganizationResponse>(
+    '/organizations/register',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    accessToken,
+    Boolean(accessToken)
+  );
 }
 
 export function fetchMyOrganization(accessToken?: string) {
