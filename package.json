@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:github-pages": "GITHUB_PAGES=true next build",
+    "build:github-pages": "cross-env GITHUB_PAGES=true next build",
     "serve:out": "npx serve out"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "@types/node": "^22.19.17",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9.25.0",
     "eslint-config-next": "^16.0.0",
     "typescript": "^5.8.3"
