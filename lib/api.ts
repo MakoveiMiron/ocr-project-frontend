@@ -26,6 +26,34 @@ function buildHeaders(init?: RequestInit, accessToken?: string) {
   return headers;
 }
 
+function formatRequestUrl(path: string) {
+  return `${config.apiBaseUrl}${path}`;
+}
+
+function isLikelyCorsError(error: unknown) {
+  if (!(error instanceof TypeError)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return message.includes('failed to fetch') || message.includes('networkerror');
+}
+
+function toNetworkError(path: string, error: unknown) {
+  if (isLikelyCorsError(error)) {
+    const target = formatRequestUrl(path);
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : 'the current frontend origin';
+
+    return new Error(
+      `Unable to reach API (${target}) from ${origin}. This is usually a CORS issue. ` +
+        'Please allow this origin in backend CORS settings (Access-Control-Allow-Origin).'
+    );
+  }
+
+  return error instanceof Error ? error : new Error('Unexpected network error');
+}
+
 async function assertResponseOk(response: Response) {
   if (response.ok) {
     return;
@@ -46,11 +74,16 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    ...init,
-    headers,
-    cache: 'no-store'
-  });
+  let response: Response;
+  try {
+    response = await fetch(formatRequestUrl(path), {
+      ...init,
+      headers,
+      cache: 'no-store'
+    });
+  } catch (error) {
+    throw toNetworkError(path, error);
+  }
 
   await assertResponseOk(response);
 
@@ -62,11 +95,16 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
 }
 
 export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?: string): Promise<Response> {
-  const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    ...init,
-    headers: buildHeaders(init, accessToken),
-    cache: 'no-store'
-  });
+  let response: Response;
+  try {
+    response = await fetch(formatRequestUrl(path), {
+      ...init,
+      headers: buildHeaders(init, accessToken),
+      cache: 'no-store'
+    });
+  } catch (error) {
+    throw toNetworkError(path, error);
+  }
 
   await assertResponseOk(response);
 
