@@ -5,11 +5,11 @@ import { useEffect, useState } from 'react';
 type Theme = 'light' | 'dark';
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
     const saved = window.localStorage.getItem('theme');
-    const initialTheme: Theme = saved === 'dark' ? 'dark' : 'light';
+    const initialTheme: Theme = saved === 'light' ? 'light' : 'dark';
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
   }, []);

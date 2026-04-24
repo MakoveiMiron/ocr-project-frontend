@@ -1,15 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { clearAccessToken, hasAccessToken, startOidcLogin } from '@/lib/auth';
-import { config } from '@/lib/config';
+import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { clearAccessToken, hasAccessToken, signInWithSession } from '@/lib/auth';
 
 function LoginContent() {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const searchParams = useSearchParams();
+  const router = useRouter();
   const authenticated = hasAccessToken();
 
   const infoMessage = useMemo(() => {
@@ -21,13 +23,21 @@ function LoginContent() {
     return '';
   }, [searchParams]);
 
-  async function handleLoginClick() {
+  useEffect(() => {
+    if (authenticated) {
+      router.replace('/');
+    }
+  }, [authenticated, router]);
+
+  async function handleLoginSubmit(event: FormEvent) {
+    event.preventDefault();
     setMessage('');
     setIsSubmitting(true);
     try {
-      await startOidcLogin();
+      await signInWithSession(email, password);
+      router.replace('/');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not start login. Please try again.');
+      setMessage(error instanceof Error ? error.message : 'Could not sign in. Please try again.');
       setIsSubmitting(false);
     }
   }
@@ -49,14 +59,39 @@ function LoginContent() {
           <div className="grid" style={{ gap: 10 }}>
             <p className="small">You are authenticated in this browser session.</p>
             <div className="actions-row">
-              <Link className="btn btn-primary" href="/dashboard">Go to dashboard</Link>
+              <Link className="btn btn-primary" href="/">Go to app</Link>
               <button className="btn btn-secondary" type="button" onClick={handleSignOut}>Sign out</button>
             </div>
           </div>
         ) : (
-          <button className="btn btn-primary" type="button" onClick={handleLoginClick} disabled={isSubmitting}>
-            {isSubmitting ? 'Redirecting...' : `Login with ${config.oidcProviderName}`}
-          </button>
+          <form onSubmit={handleLoginSubmit} className="grid" style={{ gap: 10 }}>
+            <label className="small" htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              className="input"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            <label className="small" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="input"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
+            </button>
+            <p className="small" style={{ marginBottom: 0 }}>
+              Don&apos;t have an account? <Link href="/register">Create one</Link>
+            </p>
+          </form>
         )}
         {message ? <p className="small">{message}</p> : null}
       </div>

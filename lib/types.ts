@@ -58,6 +58,12 @@ export interface AuthorizationUrlResponse {
   authorization_url: string;
 }
 
+export interface SessionLoginResponse {
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+}
+
 export interface AuthCallbackResponse {
   access_token: string;
   token_type: string;

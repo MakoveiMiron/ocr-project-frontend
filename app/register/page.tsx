@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { registerOrganization } from '@/lib/api';
 import { getAccessToken, hasAccessToken, startOidcLogin } from '@/lib/auth';
@@ -135,9 +136,16 @@ export default function RegisterPage() {
             <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Creating account...' : 'Create account'}
             </button>
+<<<<<<< codex/fix-registration-endpoint-auth-requirement-t44856
+            <p className="small" style={{ marginBottom: 0 }}>
+              Already have an account? <Link href="/login">Sign in</Link>
+            </p>
+            {message ? <p className="small">{message}</p> : null}
+=======
             {message ? <p className="small">{message}</p> : null}
           </>
         ) : null}
+>>>>>>> main
       </form>
     </section>
   );

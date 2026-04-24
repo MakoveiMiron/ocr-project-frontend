@@ -5,6 +5,7 @@ import {
   AuthMeResponse,
   AuthCallbackResponse,
   AuthorizationUrlResponse,
+  SessionLoginResponse,
   BillingCheckoutResponse,
   BillingPortalResponse,
   DocumentDetail,
@@ -91,6 +92,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit, accessToken?
     response = await fetch(formatRequestUrl(path), {
       ...init,
       headers,
+      credentials: 'include',
       cache: 'no-store'
     });
   } catch (error) {
@@ -112,6 +114,7 @@ export async function apiFetchRaw(path: string, init?: RequestInit, accessToken?
     response = await fetch(formatRequestUrl(path), {
       ...init,
       headers: buildHeaders(init, accessToken),
+      credentials: 'include',
       cache: 'no-store'
     });
   } catch (error) {
@@ -137,11 +140,22 @@ export function exchangeAuthCallback(payload: { code: string; state: string }) {
   });
 }
 
+export function createSessionLogin(payload: { email: string; password: string }) {
+  return apiFetch<SessionLoginResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
 export function fetchAuthMe(accessToken: string) {
   return apiFetch<AuthMeResponse>('/auth/me', undefined, accessToken);
 }
 
+<<<<<<< codex/fix-registration-endpoint-auth-requirement-t44856
+export function registerOrganization(payload: RegisterOrganizationRequest, accessToken?: string) {
+=======
 export function registerOrganization(payload: RegisterOrganizationRequest, accessToken: string) {
+>>>>>>> main
   return apiFetch<RegisterOrganizationResponse>('/organizations/register', {
     method: 'POST',
     body: JSON.stringify(payload)
