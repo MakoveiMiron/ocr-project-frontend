@@ -16,3 +16,7 @@ cp .env.example .env.local
 npm install
 npm run dev
 ```
+
+
+## Deploy to GitHub Pages
+See [`README-DEPLOY.md`](./README-DEPLOY.md) for the GitHub Actions-based Pages deployment setup.
