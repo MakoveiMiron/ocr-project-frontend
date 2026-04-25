@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOut } from '@/lib/auth';
 import { withBasePath } from '@/lib/basePath';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 
 export function NavAuth() {
-  const { isAuthenticated, isLoading, profile } = useAuthStatus();
+  const { isAuthenticated, isLoading } = useAuthStatus();
+  const pathname = usePathname();
+  const isProfilePage = pathname === '/dashboard';
 
   async function onLogout() {
     await signOut();
@@ -28,8 +31,7 @@ export function NavAuth() {
 
   return (
     <>
-      <Link href="/dashboard" className="btn btn-secondary">Profile</Link>
-      {profile?.name ? <span className="small">{profile.name}</span> : null}
+      {!isProfilePage ? <Link href="/dashboard" className="btn btn-secondary">Profile</Link> : null}
       <button type="button" className="btn btn-primary" onClick={onLogout}>Logout</button>
     </>
   );
