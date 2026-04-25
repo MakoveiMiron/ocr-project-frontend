@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { fetchDocumentDetail, initDocumentUpload, processDocument } from '@/lib/api';
+import { fetchDocumentDetail, initDocumentUpload, processDocument, uploadDocumentBinary } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
 
 type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
@@ -47,7 +47,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
       if (normalizedStatus === 'failed' || normalizedStatus === 'expired') {
         setFileStatuses((current) => current.map((item) => (
           item.fileName === fileName
-            ? { ...item, stage: 'failed', message: `Processing ${normalizedStatus}.` }
+            ? { ...item, stage: 'failed', message: detail.error_message || `Processing ${normalizedStatus}.` }
             : item
         )));
         return;
@@ -65,6 +65,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
     try {
       const token = await getOptionalAccessToken();
       setFileStatuses(files.map((file) => ({ fileName: file.name, stage: 'uploading', message: 'Uploading...' })));
+
       for (const file of files) {
         const init = await initDocumentUpload({
           filename: file.name,
@@ -72,29 +73,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
           size_bytes: file.size
         }, token);
 
-        const isLocalUpload = init.upload_url.includes('/local-upload');
-        const uploadResponse = await fetch(
-          init.upload_url,
-          isLocalUpload
-            ? (() => {
-                const formData = new FormData();
-                formData.append('file', file);
-                return {
-                  method: 'PUT',
-                  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-                  body: formData
-                };
-              })()
-            : {
-                method: 'PUT',
-                headers: { 'Content-Type': file.type || 'application/pdf' },
-                body: file
-              }
-        );
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Upload failed for ${file.name}. Please try again.`);
-        }
+        await uploadDocumentBinary(init.upload_url, file, token);
 
         setFileStatuses((current) => current.map((item) => (
           item.fileName === file.name ? { ...item, stage: 'processing', message: 'Queued for OCR processing...' } : item

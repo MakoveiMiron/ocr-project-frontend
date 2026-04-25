@@ -1,4 +1,4 @@
-const defaultApiBaseUrl = 'https://web-production-3a8489.up.railway.app/api/v1';
+const defaultApiBaseUrl = 'http://localhost:8000/api/v1';
 
 function normalizeApiBaseUrl(rawUrl?: string) {
   if (!rawUrl) return defaultApiBaseUrl;
@@ -35,5 +35,6 @@ export const config = {
     process.env.NEXT_PUBLIC_OIDC_PROVIDER ??
     process.env.REACT_APP_OIDC_PROVIDER ??
     process.env.VITE_OIDC_PROVIDER ??
-    'OIDC'
+    'OIDC',
+  oidcEnabled: process.env.NEXT_PUBLIC_OIDC_ENABLED === 'true'
 };

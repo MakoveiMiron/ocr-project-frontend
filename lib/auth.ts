@@ -205,10 +205,14 @@ export async function getCurrentUserProfile(): Promise<AuthMeResponse> {
     markSessionActive();
     return profile;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('401')) {
-      clearAccessToken();
-      throw new Error('Your session expired. Please sign in again.');
+    if (error instanceof Error) {
+      const normalizedMessage = error.message.toLowerCase();
+      if (normalizedMessage.includes('401') || normalizedMessage.includes('unauthorized') || normalizedMessage.includes('not authenticated')) {
+        clearAccessToken();
+        throw new Error('Your session expired. Please sign in again.');
+      }
     }
+
     throw error;
   }
 }

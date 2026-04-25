@@ -80,7 +80,7 @@ export interface AuthMeResponse {
 
 export interface RegisterOrganizationRequest {
   account_type: AccountType;
-  organization_name?: string;
+  organization_name?: string | null;
   full_name: string;
   billing_email: string;
   email: string;
