@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { downloadDocument, fetchDocumentDetail } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
@@ -11,6 +11,7 @@ export default function DocumentDetailClient() {
   const documentId = useMemo(() => searchParams.get('documentId') ?? '', [searchParams]);
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [message, setMessage] = useState('');
+  const hasTriggeredDownload = useRef(false);
 
   useEffect(() => {
     if (!documentId) {
@@ -36,8 +37,13 @@ export default function DocumentDetailClient() {
   }, [documentId]);
 
   useEffect(() => {
+    hasTriggeredDownload.current = false;
+  }, [documentId]);
+
+  useEffect(() => {
     async function maybeDownload() {
-      if (searchParams.get('download') !== '1' || !documentId) return;
+      if (searchParams.get('download') !== '1' || !documentId || hasTriggeredDownload.current) return;
+      hasTriggeredDownload.current = true;
       try {
         const token = await getOptionalAccessToken();
         const response = await downloadDocument(documentId, token);
@@ -51,6 +57,7 @@ export default function DocumentDetailClient() {
         link.remove();
         URL.revokeObjectURL(url);
       } catch (error) {
+        hasTriggeredDownload.current = false;
         setMessage(error instanceof Error ? error.message : 'Download failed.');
       }
     }
