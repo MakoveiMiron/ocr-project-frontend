@@ -43,6 +43,18 @@ function formatRequestUrl(path: string) {
   return `${config.apiBaseUrl}${path}`;
 }
 
+function resolveApiUrl(pathOrUrl: string) {
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    return pathOrUrl;
+  }
+
+  if (pathOrUrl.startsWith('/')) {
+    return `${new URL(config.apiBaseUrl).origin}${pathOrUrl}`;
+  }
+
+  return `${config.apiBaseUrl}/${pathOrUrl}`;
+}
+
 function isLikelyCorsError(error: unknown) {
   if (!(error instanceof TypeError)) {
     return false;
@@ -67,6 +79,47 @@ function toNetworkError(path: string, error: unknown) {
   return error instanceof Error ? error : new Error('Unexpected network error');
 }
 
+async function buildApiError(response: Response, path: string) {
+  const fallbackMessage = `API error: ${response.status}`;
+
+  let parsed: unknown;
+  try {
+    parsed = await response.clone().json();
+  } catch {
+    try {
+      const raw = await response.text();
+      return new Error(raw ? `${fallbackMessage} - ${raw}` : fallbackMessage);
+    } catch {
+      return new Error(fallbackMessage);
+    }
+  }
+
+  if (typeof parsed === 'object' && parsed !== null && 'detail' in parsed) {
+    const detail = (parsed as { detail?: unknown }).detail;
+    if (typeof detail === 'string') {
+      return new Error(detail);
+    }
+
+    if (Array.isArray(detail)) {
+      const messages = detail
+        .map((item) => {
+          if (typeof item === 'string') return item;
+          if (typeof item === 'object' && item && 'msg' in item) {
+            return String((item as { msg?: unknown }).msg ?? '').trim();
+          }
+          return '';
+        })
+        .filter(Boolean);
+
+      if (messages.length) {
+        return new Error(messages.join('; '));
+      }
+    }
+  }
+
+  return new Error(fallbackMessage);
+}
+
 async function assertResponseOk(response: Response, path: string) {
   if (response.ok) {
     return;
@@ -83,8 +136,7 @@ async function assertResponseOk(response: Response, path: string) {
     }
   }
 
-  const text = await response.text();
-  throw new Error(text ? `API error: ${response.status} - ${text}` : `API error: ${response.status}`);
+  throw await buildApiError(response, path);
 }
 
 export async function apiFetch<T>(
@@ -142,6 +194,30 @@ export async function apiFetchRaw(
   await assertResponseOk(response, path);
 
   return response;
+}
+
+export async function uploadDocumentBinary(uploadUrl: string, file: File, accessToken?: string) {
+  const headers = buildHeaders(undefined, accessToken, true);
+  const formData = new FormData();
+  formData.append('file', file);
+
+  let response: Response;
+  const resolvedUploadUrl = resolveApiUrl(uploadUrl);
+  try {
+    response = await fetch(resolvedUploadUrl, {
+      method: 'PUT',
+      headers,
+      body: formData,
+      credentials: 'include',
+      cache: 'no-store'
+    });
+  } catch (error) {
+    throw toNetworkError(uploadUrl, error);
+  }
+
+  if (!response.ok) {
+    throw await buildApiError(response, uploadUrl);
+  }
 }
 
 export function createAuthorizationUrl(payload: { state: string; nonce: string }) {

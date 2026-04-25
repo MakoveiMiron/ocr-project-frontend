@@ -1,46 +1,78 @@
-# Frontend deploy notes
+# Deployment Notes (Frontend + self-contained FastAPI backend)
 
-This app uses a static Next.js export (`output: 'export'`) so it can be deployed to **GitHub Pages**.
+## Architecture
 
-## Recommended: GitHub Actions deploy (already included)
+- Frontend: Next.js app (this repository)
+- Backend: FastAPI service with embedded storage/cache (`http://localhost:8000` in local)
+- API path prefix: `/api/v1`
 
-A workflow is available at `.github/workflows/deploy-pages.yml`. It builds `out/` and deploys it to GitHub Pages automatically.
+No Redis/PostgreSQL/MySQL/MongoDB is required for default backend operation.
 
-### 1) Enable Pages in repository settings
+## Environment variables
 
-In GitHub repository settings:
+Required frontend variables:
 
-- **Pages → Build and deployment → Source: GitHub Actions**
-
-If Pages source is set to `Deploy from branch`, GitHub may show the repository `README.md` instead of the built app.
-
-### 2) Configure environment variables (optional but recommended)
-
-In **Settings → Secrets and variables → Actions → Variables**:
-
-- `NEXT_PUBLIC_API_BASE_URL` = your backend API base URL (including `/api/v1`)
-- `NEXT_PUBLIC_BASE_PATH` = optional override for custom setup
-  - For standard project pages (`https://<user>.github.io/<repo>`), you can leave this empty; the build auto-detects `/<repo>`.
-
-### 3) Push to `main` or run workflow manually
-
-The workflow will:
-
-- run `npm ci`
-- run `npm run build:github-pages`
-- publish the generated `out/` folder
-
-## Local build for verification
-
-```bash
-npm install
-NEXT_PUBLIC_API_BASE_URL=https://example.com/api/v1 npm run build:github-pages
+```env
+NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api/v1
+API_BASE_URL=https://api.yourdomain.com/api/v1
+NEXT_PUBLIC_OIDC_ENABLED=false
+NEXT_PUBLIC_OIDC_PROVIDER=OIDC
 ```
 
-## API notes
+## Hosting suggestions (Hostinger / Rekhost / generic VPS)
 
-- Static hosting cannot run Next.js API routes.
-- The frontend calls the backend directly using `NEXT_PUBLIC_API_BASE_URL`.
-- Because calls are made directly from the browser, your backend **must** allow your frontend origin in CORS.
-  - Example: if deployed at `https://makoveimiron.github.io`, return `Access-Control-Allow-Origin: https://makoveimiron.github.io` for API and preflight (`OPTIONS`) responses.
-  - If this header is missing, the browser blocks requests before your frontend can receive the response.
+1. Run backend as systemd service (or process manager).
+2. Run frontend with `npm run build && npm run start`.
+3. Put Nginx/Caddy reverse proxy in front.
+4. Terminate TLS at reverse proxy.
+
+## Nginx reverse proxy example
+
+```nginx
+server {
+  listen 443 ssl;
+  server_name app.yourdomain.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+server {
+  listen 443 ssl;
+  server_name api.yourdomain.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+Then configure frontend with:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api/v1
+```
+
+## Cookie/session considerations
+
+- Frontend requests include `credentials: include`.
+- Backend CORS must explicitly allow frontend origin(s).
+- Production backend should typically use:
+  - `SESSION_COOKIE_SECURE=true`
+  - `SESSION_COOKIE_SAMESITE=lax` (or stricter setup based on topology)
+
+## Billing
+
+- Frontend calls `/billing/checkout/{plan_code}` and `/billing/portal`.
+- If Stripe is not configured on backend, UI shows friendly error instead of crashing.
+
+## Known limitations
+
+- Billing endpoints depend on Stripe backend configuration.
+- OIDC flow is optional and UI is hidden unless explicitly enabled.
+- Static hosting requires correct CORS on backend APIs.

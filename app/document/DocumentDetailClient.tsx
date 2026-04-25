@@ -71,6 +71,8 @@ export default function DocumentDetailClient() {
             <p className="small"><strong>OCR step:</strong> {document.current_step ?? document.latest_job?.current_step ?? '-'}</p>
             <p className="small"><strong>DOCX ready:</strong> {document.docx_available ? 'Yes' : 'No'}</p>
             <p className="small"><strong>Retention deadline:</strong> {document.retention_deadline ?? '-'}</p>
+            <p className="small"><strong>Cleanup status:</strong> {document.cleanup_status ?? '-'}</p>
+            <p className="small"><strong>Error message:</strong> {document.error_message ?? '-'}</p>
           </div>
         )}
       </div>

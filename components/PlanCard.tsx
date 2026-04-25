@@ -22,7 +22,12 @@ export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticate
       const response = await createBillingCheckout(plan.code, token);
       window.location.href = response.checkout_url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start checkout.');
+      const message = err instanceof Error ? err.message : 'Failed to start checkout.';
+      if (message.toLowerCase().includes('stripe')) {
+        setError('Billing is currently unavailable because Stripe is not configured on the backend environment.');
+      } else {
+        setError(message);
+      }
     } finally {
       setBusy(false);
     }

@@ -44,7 +44,12 @@ export default function SubscriptionPage() {
       const response = await createBillingPortal(token);
       window.location.href = response.portal_url;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to open billing portal.');
+      const message = error instanceof Error ? error.message : 'Failed to open billing portal.';
+      if (message.toLowerCase().includes('stripe')) {
+        setMessage('Billing portal is unavailable because Stripe is not configured on the backend.');
+      } else {
+        setMessage(message);
+      }
     }
   }
 

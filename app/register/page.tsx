@@ -29,7 +29,7 @@ export default function RegisterPage() {
     try {
       const payload = {
         account_type: form.account_type,
-        organization_name: needsCompanyName ? form.organization_name : undefined,
+        organization_name: needsCompanyName ? form.organization_name : null,
         full_name: form.full_name,
         billing_email: form.billing_email,
         email: form.email,

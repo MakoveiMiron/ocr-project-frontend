@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInWithSession, signOut } from '@/lib/auth';
+import { signInWithSession, signOut, startOidcLogin } from '@/lib/auth';
+import { config } from '@/lib/config';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 
 function LoginContent() {
@@ -50,6 +51,15 @@ function LoginContent() {
     setMessage('Signed out.');
   }
 
+  async function handleOidcLogin() {
+    setMessage('');
+    try {
+      await startOidcLogin(nextPath);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'OIDC sign in could not be started.');
+    }
+  }
+
   return (
     <section className="container auth-layout" style={{ paddingBottom: 40 }}>
       <div className="card auth-card">
@@ -91,6 +101,11 @@ function LoginContent() {
             <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
+            {config.oidcEnabled ? (
+              <button className="btn btn-secondary" type="button" onClick={handleOidcLogin}>
+                Sign in with {config.oidcProviderName}
+              </button>
+            ) : null}
             <p className="small" style={{ marginBottom: 0 }}>
               Don&apos;t have an account? <Link href="/register">Create one</Link>
             </p>
