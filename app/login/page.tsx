@@ -15,7 +15,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isAuthenticated: authenticated } = useAuthStatus();
-  const nextPath = useMemo(() => searchParams.get('next') || '/dashboard', [searchParams]);
+  const nextPath = useMemo(() => searchParams.get('next') || '/', [searchParams]);
 
   const infoMessage = useMemo(() => {
     const reason = searchParams.get('reason');

@@ -14,7 +14,7 @@ export function NavAuth() {
   }
 
   if (isLoading) {
-    return <span className="small">Checking session…</span>;
+    return null;
   }
 
   if (!isAuthenticated) {
@@ -28,7 +28,7 @@ export function NavAuth() {
 
   return (
     <>
-      <Link href="/" className="btn btn-secondary">App</Link>
+      <Link href="/dashboard" className="btn btn-secondary">Profile</Link>
       {profile?.name ? <span className="small">{profile.name}</span> : null}
       <button type="button" className="btn btn-primary" onClick={onLogout}>Logout</button>
     </>
