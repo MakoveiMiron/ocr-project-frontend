@@ -7,7 +7,7 @@ import { useAuthStatus } from '@/lib/useAuthStatus';
 export function NavLinks() {
   const { isAuthenticated } = useAuthStatus();
   const pathname = usePathname();
-  const isProfilePage = pathname === '/dashboard';
+  const isProfilePage = /(^|\/)dashboard(\/|$)/.test(pathname);
 
   return (
     <>

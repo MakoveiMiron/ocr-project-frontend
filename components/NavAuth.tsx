@@ -9,7 +9,7 @@ import { useAuthStatus } from '@/lib/useAuthStatus';
 export function NavAuth() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const pathname = usePathname();
-  const isProfilePage = pathname === '/dashboard';
+  const isProfilePage = /(^|\/)dashboard(\/|$)/.test(pathname);
 
   async function onLogout() {
     await signOut();
