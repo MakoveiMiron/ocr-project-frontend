@@ -52,8 +52,7 @@ export function UserProfile() {
         <p className="small" style={{ margin: 0 }}>
           Logout is available from the top-right navigation bar.
         </p>
-        <Link href="/subscription" className="btn btn-primary">Manage subscription</Link>
-      </div>
+      ) : null}
 
       {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
     </div>
