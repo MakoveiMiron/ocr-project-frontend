@@ -24,10 +24,7 @@ export function UserProfile() {
 
   return (
     <div className="card" style={{ marginBottom: 16, display: 'grid', gap: 16 }}>
-      <h2 className="section-title" style={{ marginBottom: 0 }}>User profile</h2>
-      <p className="small" style={{ margin: 0 }}>
-        Manage your subscription and review your account details in one place.
-      </p>
+
 
       <div className="card" style={{ margin: 0 }}>
         <h3 style={{ marginTop: 0 }}>Personal details</h3>
@@ -47,12 +44,6 @@ export function UserProfile() {
         </p>
         <Link href="/subscription" className="btn btn-primary">Manage subscription</Link>
       </div>
-
-      {profile ? (
-        <p className="small" style={{ margin: 0 }}>
-          Logout is available from the top-right navigation bar.
-        </p>
-      ) : null}
 
       {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
     </div>
