@@ -9,7 +9,7 @@ import { useAuthStatus } from '@/lib/useAuthStatus';
 export function NavAuth() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const pathname = usePathname();
-  const isProfilePage = pathname === '/dashboard' || pathname.endsWith('/dashboard');
+  const isDashboardPage = pathname === '/dashboard' || pathname === '/dashboard/' || pathname.endsWith('/dashboard') || pathname.endsWith('/dashboard/');
 
   async function onLogout() {
     await signOut();
@@ -31,7 +31,7 @@ export function NavAuth() {
 
   return (
     <>
-      {!isProfilePage ? <Link href="/dashboard" className="btn btn-secondary">Profile</Link> : null}
+      {!isDashboardPage ? <Link href="/dashboard" className="btn btn-secondary">Profile</Link> : null}
       <button type="button" className="btn btn-primary" onClick={onLogout}>Logout</button>
     </>
   );
