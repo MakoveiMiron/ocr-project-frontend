@@ -30,14 +30,6 @@ export function UserProfile() {
       </p>
 
       <div className="card" style={{ margin: 0 }}>
-        <h3 style={{ marginTop: 0 }}>Manage subscription</h3>
-        <p className="small">
-          Open billing to change plan, payment method, or renewal details.
-        </p>
-        <Link href="/subscription" className="btn btn-primary">Manage subscription</Link>
-      </div>
-
-      <div className="card" style={{ margin: 0 }}>
         <h3 style={{ marginTop: 0 }}>Personal details</h3>
         {profile ? (
           <div className="small" style={{ display: 'grid', gap: 10 }}>
@@ -46,6 +38,14 @@ export function UserProfile() {
             <div><strong>Organization ID</strong><br />{profile.organization_id}</div>
           </div>
         ) : <p className="small" style={{ marginBottom: 0 }}>Loading profile…</p>}
+      </div>
+
+      <div className="card" style={{ margin: 0 }}>
+        <h3 style={{ marginTop: 0 }}>Manage subscription</h3>
+        <p className="small">
+          Open billing to change plan, payment method, or renewal details.
+        </p>
+        <Link href="/subscription" className="btn btn-primary">Manage subscription</Link>
       </div>
 
       {profile ? (
