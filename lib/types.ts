@@ -52,6 +52,14 @@ export interface DocumentDetail {
   created_at: string;
   error_message: string | null;
   latest_job?: ProcessingJobStatus;
+  pipeline_version?: string | null;
+  translation_friendly?: boolean | null;
+  preserve_layout?: boolean | null;
+  ocr_provider?: string | null;
+  layout_mode?: string | null;
+  qa_report_url?: string | null;
+  artifacts?: DocumentArtifact[] | null;
+  warnings?: string[] | null;
 }
 
 export interface AuthorizationUrlResponse {
@@ -113,11 +121,32 @@ export interface UploadInitResponse {
 
 export interface ProcessDocumentRequest {
   engine_policy: string;
+  translation_friendly?: boolean;
+  preserve_layout?: boolean;
 }
 
 export interface ProcessDocumentResponse {
   job_id: string;
   status: string;
+}
+
+export interface DocumentArtifact {
+  kind: string;
+  storage_key: string;
+}
+
+export interface DocumentQaResponse {
+  qa_report_url?: string | null;
+  warnings?: string[] | null;
+}
+
+export interface DocumentArtifactsResponse {
+  artifacts?: DocumentArtifact[] | null;
+  warnings?: string[] | null;
+}
+
+export interface DocumentIrResponse {
+  ir_url?: string | null;
 }
 
 export interface BillingCheckoutResponse {

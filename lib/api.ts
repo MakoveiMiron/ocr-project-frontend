@@ -9,6 +9,9 @@ import {
   BillingCheckoutResponse,
   BillingPortalResponse,
   DocumentDetail,
+  DocumentArtifactsResponse,
+  DocumentIrResponse,
+  DocumentQaResponse,
   DocumentSummary,
   OrganizationMember,
   OrganizationSummary,
@@ -294,12 +297,50 @@ export function processDocument(documentId: string, payload: ProcessDocumentRequ
   }, accessToken);
 }
 
+export function reprocessDocument(documentId: string, payload: ProcessDocumentRequest, accessToken?: string) {
+  return apiFetch<ProcessDocumentResponse>(`/documents/${documentId}/reprocess`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }, accessToken);
+}
+
+export function convertDocument(
+  documentId: string,
+  options?: { translation_friendly?: boolean; preserve_layout?: boolean },
+  accessToken?: string
+) {
+  const query = new URLSearchParams();
+  if (typeof options?.translation_friendly === 'boolean') {
+    query.set('translation_friendly', String(options.translation_friendly));
+  }
+  if (typeof options?.preserve_layout === 'boolean') {
+    query.set('preserve_layout', String(options.preserve_layout));
+  }
+  const suffix = query.size ? `?${query.toString()}` : '';
+
+  return apiFetch<ProcessDocumentResponse>(`/documents/${documentId}/convert${suffix}`, {
+    method: 'POST'
+  }, accessToken);
+}
+
 export function fetchDocuments(accessToken?: string) {
   return apiFetch<DocumentSummary[]>('/documents', undefined, accessToken);
 }
 
 export function fetchDocumentDetail(documentId: string, accessToken?: string) {
   return apiFetch<DocumentDetail>(`/documents/${documentId}`, undefined, accessToken);
+}
+
+export function fetchDocumentQa(documentId: string, accessToken?: string) {
+  return apiFetch<DocumentQaResponse>(`/documents/${documentId}/qa`, undefined, accessToken);
+}
+
+export function fetchDocumentArtifacts(documentId: string, accessToken?: string) {
+  return apiFetch<DocumentArtifactsResponse>(`/documents/${documentId}/artifacts`, undefined, accessToken);
+}
+
+export function fetchDocumentIr(documentId: string, accessToken?: string) {
+  return apiFetch<DocumentIrResponse>(`/documents/${documentId}/ir`, undefined, accessToken);
 }
 
 export function downloadDocument(documentId: string, accessToken?: string) {
