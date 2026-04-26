@@ -90,7 +90,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
       }
 
       setStage('completed');
-      setMessage('All files were submitted. Download DOCX files from Recent conversions when ready.');
+      setMessage('All files were submitted. Download the DOCX from the latest processed file panel when ready.');
       setFiles([]);
       await onComplete?.();
     } catch (error) {
