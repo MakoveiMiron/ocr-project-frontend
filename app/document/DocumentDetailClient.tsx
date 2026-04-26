@@ -76,9 +76,14 @@ export default function DocumentDetailClient() {
     }
 
     void load();
-    const interval = setInterval(() => void load(), 5000);
+    const interval = setInterval(() => {
+      if (document?.document_status && ['completed', 'failed', 'expired'].includes(document.document_status.toLowerCase())) {
+        return;
+      }
+      void load();
+    }, 7000);
     return () => clearInterval(interval);
-  }, [documentId]);
+  }, [document?.document_status, documentId]);
 
   useEffect(() => {
     hasTriggeredDownload.current = false;

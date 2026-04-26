@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Hero } from '@/components/Hero';
 import { UploadForm } from '@/components/UploadForm';
 import { deleteDocument, ApiError, fetchDocumentDetail, fetchDocuments } from '@/lib/api';
@@ -17,6 +17,7 @@ export default function HomePage() {
   const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
   const [downloadedDocumentIds, setDownloadedDocumentIds] = useState<Record<string, boolean>>({});
   const { isAuthenticated, isLoading } = useAuthStatus();
+  const detailCacheRef = useRef<Record<string, { detail?: DocumentDetail; docxAvailable: boolean; lastCheckedAt: number }>>({});
 
   const loadDownloadableDocuments = useCallback(async (docs: DocumentSummary[]) => {
     const completed = docs
@@ -33,14 +34,34 @@ export default function HomePage() {
       });
 
     const downloadable: DocumentDetail[] = [];
+    const now = Date.now();
 
     for (const doc of completed) {
+      const cached = detailCacheRef.current[doc.id];
+      if (cached?.docxAvailable && cached.detail) {
+        downloadable.push(cached.detail);
+        continue;
+      }
+      if (cached && !cached.docxAvailable && now - cached.lastCheckedAt < 60_000) {
+        continue;
+      }
+
       try {
         const detail = await fetchDocumentDetail(doc.id);
+        detailCacheRef.current[doc.id] = {
+          detail,
+          docxAvailable: detail.docx_available,
+          lastCheckedAt: now
+        };
         if (detail.docx_available) {
           downloadable.push(detail);
         }
       } catch {
+        detailCacheRef.current[doc.id] = {
+          detail: cached?.detail,
+          docxAvailable: cached?.docxAvailable ?? false,
+          lastCheckedAt: now
+        };
         // Ignore per-document detail failures and continue with older completed files.
       }
     }
@@ -52,6 +73,7 @@ export default function HomePage() {
     if (!isAuthenticated) {
       setDocuments([]);
       setDownloadableDocuments([]);
+      detailCacheRef.current = {};
       return;
     }
 
@@ -68,7 +90,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     void loadDocuments();
-    const interval = setInterval(() => void loadDocuments(), 8000);
+    const interval = setInterval(() => void loadDocuments(), 15000);
     return () => clearInterval(interval);
   }, [isAuthenticated, loadDocuments]);
 
