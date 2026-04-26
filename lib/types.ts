@@ -27,6 +27,7 @@ export interface DocumentSummary {
   id: string;
   original_filename: string;
   status: string;
+  created_at?: string;
 }
 
 export interface ProcessingJobStatus {
