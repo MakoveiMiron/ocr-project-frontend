@@ -192,8 +192,14 @@ button, input, textarea, select { font: inherit; }
 .section-title { margin-top: 0; margin-bottom: 10px; font-size: 1.15rem; letter-spacing: -0.01em; }
 .actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .stack-sm { display: grid; gap: 10px; }
+.mt-12 { margin-top: 12px; }
 .mt-16 { margin-top: 16px; }
 .mb-16 { margin-bottom: 16px; }
+.upload-status-list {
+  max-height: 96px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
 @media (max-width: 900px) {
   .grid-2, .grid-3, .kpis { grid-template-columns: 1fr; }
   .topnav {

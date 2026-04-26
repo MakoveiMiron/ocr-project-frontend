@@ -104,8 +104,8 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
   return (
     <div className="card">
       <h2 className="section-title">Upload PDF</h2>
-      <p className="small">Select a PDF file to convert it into an editable DOCX document.</p>
-      <div className="dropzone mt-16">
+      <p className="small" style={{ marginBottom: 8 }}>Select a PDF file to convert it into an editable DOCX document.</p>
+      <div className="dropzone mt-12">
         <input
           className="input"
           type="file"
@@ -113,10 +113,10 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
           onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
         />
       </div>
-      <button className="btn btn-primary mt-16" onClick={handleUpload} disabled={!files.length || isBusy || !isAuthenticated}>
+      <button className="btn btn-primary mt-12" onClick={handleUpload} disabled={!files.length || isBusy || !isAuthenticated}>
         {isBusy ? 'Working...' : 'Convert to DOCX'}
       </button>
-      <div className="mt-16 small" style={{ display: 'grid', gap: 8 }}>
+      <div className="mt-12 small" style={{ display: 'grid', gap: 8 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             type="checkbox"
@@ -136,7 +136,7 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
           Preserve original layout
         </label>
       </div>
-      {!isAuthenticated ? <p className="small mt-16" style={{ color: 'var(--danger)' }}>Please sign in before converting files.</p> : null}
+      {!isAuthenticated ? <p className="small mt-12" style={{ color: 'var(--danger)' }}>Please sign in before converting files.</p> : null}
       {isBusy ? (
         <div className="processing-indicator" aria-live="polite" aria-busy="true">
           <span className="spinner" />
@@ -144,11 +144,11 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
         </div>
       ) : null}
       {fileStatuses.length ? (
-        <ul className="small mt-16" style={{ marginBottom: 0 }}>
+        <ul className="small mt-12 upload-status-list" style={{ marginBottom: 0 }}>
           {fileStatuses.map((item) => <li key={item.fileName}><strong>{item.fileName}:</strong> {item.message}</li>)}
         </ul>
       ) : null}
-      {message ? <p className="small mt-16">{message}</p> : null}
+      {message ? <p className="small mt-12">{message}</p> : null}
       {stage === 'completed' ? <p className="small">Status: completed</p> : null}
       {stage === 'failed' ? <p className="small" style={{ color: 'var(--danger)' }}>Status: failed</p> : null}
     </div>
