@@ -13,6 +13,8 @@ type FileJobState = {
 
 export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () => Promise<void> | void; isAuthenticated: boolean }) {
   const [files, setFiles] = useState<File[]>([]);
+  const [translationFriendly, setTranslationFriendly] = useState(true);
+  const [preserveLayout, setPreserveLayout] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [isBusy, setIsBusy] = useState(false);
   const [stage, setStage] = useState<UploadStage>('idle');
@@ -79,7 +81,11 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
           item.fileName === file.name ? { ...item, stage: 'processing', message: 'Queued for OCR processing...' } : item
         )));
         setStage('processing');
-        await processDocument(init.document_id, { engine_policy: 'auto' }, token);
+        await processDocument(init.document_id, {
+          engine_policy: 'auto',
+          translation_friendly: translationFriendly,
+          preserve_layout: preserveLayout
+        }, token);
         await pollUntilFinished(init.document_id, token, file.name);
       }
 
@@ -110,6 +116,26 @@ export function UploadForm({ onComplete, isAuthenticated }: { onComplete?: () =>
       <button className="btn btn-primary mt-16" onClick={handleUpload} disabled={!files.length || isBusy || !isAuthenticated}>
         {isBusy ? 'Working...' : 'Convert to DOCX'}
       </button>
+      <div className="mt-16 small" style={{ display: 'grid', gap: 8 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={translationFriendly}
+            onChange={(e) => setTranslationFriendly(e.target.checked)}
+            disabled={isBusy}
+          />
+          Translation friendly output
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={preserveLayout}
+            onChange={(e) => setPreserveLayout(e.target.checked)}
+            disabled={isBusy}
+          />
+          Preserve original layout
+        </label>
+      </div>
       {!isAuthenticated ? <p className="small mt-16" style={{ color: 'var(--danger)' }}>Please sign in before converting files.</p> : null}
       {isBusy ? (
         <div className="processing-indicator" aria-live="polite" aria-busy="true">
