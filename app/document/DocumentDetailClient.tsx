@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   downloadDocument,
   fetchDocumentArtifacts,
@@ -15,6 +15,8 @@ import { DocumentDetail } from '@/lib/types';
 
 export default function DocumentDetailClient() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const documentId = useMemo(() => searchParams.get('documentId') ?? '', [searchParams]);
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [message, setMessage] = useState('');
@@ -81,7 +83,14 @@ export default function DocumentDetailClient() {
   useEffect(() => {
     async function maybeDownload() {
       if (searchParams.get('download') !== '1' || !documentId || hasTriggeredDownload.current) return;
+      const downloadKey = `auto-download-consumed:${documentId}`;
+      if (window.sessionStorage.getItem(downloadKey) === '1') {
+        router.replace(`${pathname}?documentId=${documentId}`, { scroll: false });
+        return;
+      }
+
       hasTriggeredDownload.current = true;
+      window.sessionStorage.setItem(downloadKey, '1');
       try {
         const token = await getOptionalAccessToken();
         const response = await downloadDocument(documentId, token);
@@ -94,14 +103,16 @@ export default function DocumentDetailClient() {
         link.click();
         link.remove();
         URL.revokeObjectURL(url);
+        router.replace(`${pathname}?documentId=${documentId}`, { scroll: false });
       } catch (error) {
         hasTriggeredDownload.current = false;
+        window.sessionStorage.removeItem(downloadKey);
         setMessage(error instanceof Error ? error.message : 'Download failed.');
       }
     }
 
     void maybeDownload();
-  }, [document?.original_filename, documentId, searchParams]);
+  }, [document?.original_filename, documentId, pathname, router, searchParams]);
 
   async function handleReprocess() {
     if (!documentId) return;
