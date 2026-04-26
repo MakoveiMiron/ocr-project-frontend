@@ -150,6 +150,13 @@ export interface DocumentIrResponse {
   ir_url?: string | null;
 }
 
+export interface DeleteDocumentResponse {
+  ok: boolean;
+  document_id: string;
+  deleted: boolean;
+  file_delete_outcomes?: Record<string, boolean>;
+}
+
 export interface BillingCheckoutResponse {
   checkout_url: string;
 }

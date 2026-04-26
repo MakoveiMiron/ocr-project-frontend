@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
+  ApiError,
+  deleteDocument,
   downloadDocument,
   fetchDocumentArtifacts,
   fetchDocumentDetail,
@@ -24,6 +26,8 @@ export default function DocumentDetailClient() {
   const [preserveLayout, setPreserveLayout] = useState(false);
   const [irUrl, setIrUrl] = useState<string | null>(null);
   const [isReprocessing, setIsReprocessing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [wasDownloaded, setWasDownloaded] = useState(false);
   const hasTriggeredDownload = useRef(false);
 
   useEffect(() => {
@@ -81,6 +85,15 @@ export default function DocumentDetailClient() {
   }, [documentId]);
 
   useEffect(() => {
+    if (!documentId || typeof window === 'undefined') {
+      setWasDownloaded(false);
+      return;
+    }
+
+    setWasDownloaded(window.sessionStorage.getItem(`auto-download-consumed:${documentId}`) === '1');
+  }, [documentId, searchParams]);
+
+  useEffect(() => {
     async function maybeDownload() {
       if (searchParams.get('download') !== '1' || !documentId || hasTriggeredDownload.current) return;
       const downloadKey = `auto-download-consumed:${documentId}`;
@@ -132,6 +145,31 @@ export default function DocumentDetailClient() {
     }
   }
 
+  async function handleDeleteDocument() {
+    if (!documentId || isDeleting) return;
+    const shouldDelete = window.confirm('Delete this document now? This cannot be undone.');
+    if (!shouldDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const token = await getOptionalAccessToken();
+      await deleteDocument(documentId, token);
+      window.sessionStorage.removeItem(`auto-download-consumed:${documentId}`);
+      setMessage('Document deleted.');
+      router.push('/');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 422) {
+        setMessage('Invalid document id.');
+      } else if (error instanceof ApiError && error.status === 404) {
+        setMessage('Document not found or already deleted.');
+      } else {
+        setMessage('Delete failed. Please retry.');
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <section className="container" style={{ paddingBottom: 40 }}>
       <div className="card">
@@ -176,6 +214,11 @@ export default function DocumentDetailClient() {
               </button>
               {document.docx_available ? (
                 <a className="btn" href={`/document?documentId=${documentId}&download=1`}>Download DOCX</a>
+              ) : null}
+              {document.docx_available && wasDownloaded ? (
+                <button type="button" className="btn btn-danger" onClick={() => void handleDeleteDocument()} disabled={isDeleting}>
+                  {isDeleting ? 'Deleting…' : 'Delete'}
+                </button>
               ) : null}
               {document.qa_report_url ? (
                 <a className="btn" href={document.qa_report_url} target="_blank" rel="noreferrer">Download QA JSON</a>

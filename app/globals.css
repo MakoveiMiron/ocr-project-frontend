@@ -124,6 +124,14 @@ button, input, textarea, select { font: inherit; }
   color: var(--text);
 }
 .btn-secondary:hover { background: var(--surface-soft); }
+.btn-danger {
+  border-color: rgba(255, 125, 148, 0.6);
+  background: rgba(255, 125, 148, 0.14);
+  color: #ffd9e0;
+}
+.btn-danger:hover {
+  background: rgba(255, 125, 148, 0.24);
+}
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

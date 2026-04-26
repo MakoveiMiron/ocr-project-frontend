@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Hero } from '@/components/Hero';
 import { UploadForm } from '@/components/UploadForm';
-import { fetchDocumentDetail, fetchDocuments } from '@/lib/api';
+import { deleteDocument, ApiError, fetchDocumentDetail, fetchDocuments } from '@/lib/api';
+import { getOptionalAccessToken } from '@/lib/auth';
 import { DocumentDetail, DocumentSummary } from '@/lib/types';
 import { useAuthStatus } from '@/lib/useAuthStatus';
 
@@ -11,6 +12,10 @@ export default function HomePage() {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [downloadableDocuments, setDownloadableDocuments] = useState<DocumentDetail[]>([]);
   const [error, setError] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [deletingDocumentId, setDeletingDocumentId] = useState('');
+  const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
+  const [downloadedDocumentIds, setDownloadedDocumentIds] = useState<Record<string, boolean>>({});
   const { isAuthenticated, isLoading } = useAuthStatus();
 
   const loadDownloadableDocuments = useCallback(async (docs: DocumentSummary[]) => {
@@ -67,10 +72,55 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [isAuthenticated, loadDocuments]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const downloadedMap = downloadableDocuments.reduce<Record<string, boolean>>((acc, document) => {
+      acc[document.document_id] = window.sessionStorage.getItem(`auto-download-consumed:${document.document_id}`) === '1';
+      return acc;
+    }, {});
+    setDownloadedDocumentIds(downloadedMap);
+  }, [downloadableDocuments]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timeout = window.setTimeout(() => setToastMessage(''), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [toastMessage]);
+
+  const handleDeleteDocument = useCallback(async (documentId: string) => {
+    const shouldDelete = window.confirm('Delete this document now? This cannot be undone.');
+    if (!shouldDelete) {
+      return;
+    }
+
+    setDeletingDocumentId(documentId);
+    setDeleteErrors((current) => ({ ...current, [documentId]: '' }));
+    try {
+      const token = await getOptionalAccessToken();
+      await deleteDocument(documentId, token);
+      setDownloadableDocuments((current) => current.filter((item) => item.document_id !== documentId));
+      setDocuments((current) => current.filter((item) => item.id !== documentId));
+      setDownloadedDocumentIds((current) => ({ ...current, [documentId]: false }));
+      window.sessionStorage.removeItem(`auto-download-consumed:${documentId}`);
+      setToastMessage('Document deleted.');
+    } catch (err) {
+      let message = 'Delete failed. Please retry.';
+      if (err instanceof ApiError && err.status === 422) {
+        message = 'Invalid document id.';
+      } else if (err instanceof ApiError && err.status === 404) {
+        message = 'Document not found or already deleted.';
+      }
+      setDeleteErrors((current) => ({ ...current, [documentId]: message }));
+    } finally {
+      setDeletingDocumentId('');
+    }
+  }, []);
+
   return (
     <>
       <Hero />
       <section className="container" style={{ paddingBottom: 40 }}>
+        {toastMessage ? <p className="small" style={{ color: 'var(--accent)', marginTop: 0 }}>{toastMessage}</p> : null}
         <div className="grid grid-2">
           <UploadForm onComplete={loadDocuments} isAuthenticated={isAuthenticated} />
           <div className="card">
@@ -85,7 +135,30 @@ export default function HomePage() {
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <a className="btn btn-secondary" href={`/document?documentId=${document.document_id}`}>View GPMB</a>
                       <a className="btn btn-primary" href={`/document?documentId=${document.document_id}&download=1`}>Download DOCX</a>
+                      {downloadedDocumentIds[document.document_id] ? (
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => void handleDeleteDocument(document.document_id)}
+                          disabled={deletingDocumentId === document.document_id}
+                        >
+                          {deletingDocumentId === document.document_id ? 'Deleting…' : 'Delete'}
+                        </button>
+                      ) : null}
                     </div>
+                    {deleteErrors[document.document_id] ? (
+                      <div className="small" style={{ color: 'var(--danger)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span>{deleteErrors[document.document_id]}</span>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => void handleDeleteDocument(document.document_id)}
+                          disabled={deletingDocumentId === document.document_id}
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

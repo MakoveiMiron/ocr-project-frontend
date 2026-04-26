@@ -10,6 +10,7 @@ import {
   BillingPortalResponse,
   DocumentDetail,
   DocumentArtifactsResponse,
+  DeleteDocumentResponse,
   DocumentIrResponse,
   DocumentQaResponse,
   DocumentSummary,
@@ -24,6 +25,16 @@ import {
 } from '@/lib/types';
 
 const accessTokenStorageKey = 'ocr_access_token';
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
 
 function getStoredAccessToken() {
   if (typeof window === 'undefined') {
@@ -91,16 +102,16 @@ async function buildApiError(response: Response, path: string) {
   } catch {
     try {
       const raw = await response.text();
-      return new Error(raw ? `${fallbackMessage} - ${raw}` : fallbackMessage);
+      return new ApiError(raw ? `${fallbackMessage} - ${raw}` : fallbackMessage, response.status);
     } catch {
-      return new Error(fallbackMessage);
+      return new ApiError(fallbackMessage, response.status);
     }
   }
 
   if (typeof parsed === 'object' && parsed !== null && 'detail' in parsed) {
     const detail = (parsed as { detail?: unknown }).detail;
     if (typeof detail === 'string') {
-      return new Error(detail);
+      return new ApiError(detail, response.status);
     }
 
     if (Array.isArray(detail)) {
@@ -115,12 +126,12 @@ async function buildApiError(response: Response, path: string) {
         .filter(Boolean);
 
       if (messages.length) {
-        return new Error(messages.join('; '));
+        return new ApiError(messages.join('; '), response.status);
       }
     }
   }
 
-  return new Error(fallbackMessage);
+  return new ApiError(fallbackMessage, response.status);
 }
 
 async function assertResponseOk(response: Response, path: string) {
@@ -345,6 +356,10 @@ export function fetchDocumentIr(documentId: string, accessToken?: string) {
 
 export function downloadDocument(documentId: string, accessToken?: string) {
   return apiFetchRaw(`/documents/${documentId}/download`, undefined, accessToken);
+}
+
+export function deleteDocument(documentId: string, accessToken?: string) {
+  return apiFetch<DeleteDocumentResponse>(`/documents/${documentId}`, { method: 'DELETE' }, accessToken);
 }
 
 export function createBillingCheckout(planCode: string, accessToken?: string) {
