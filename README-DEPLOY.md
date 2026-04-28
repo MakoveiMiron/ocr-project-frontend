@@ -3,7 +3,7 @@
 ## Architecture
 
 - Frontend: Next.js app (this repository)
-- Backend: FastAPI service with embedded storage/cache (`http://localhost:8000` in local)
+- Backend: FastAPI service with embedded storage/cache (`http://localhost:5000` in local)
 - API path prefix: `/api/v1`
 
 No Redis/PostgreSQL/MySQL/MongoDB is required for default backend operation.
@@ -45,7 +45,7 @@ server {
   server_name api.yourdomain.com;
 
   location / {
-    proxy_pass http://127.0.0.1:8000;
+    proxy_pass http://127.0.0.1:5000;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
   }

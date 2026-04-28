@@ -1,4 +1,4 @@
-const defaultApiBaseUrl = 'http://localhost:8000/api/v1';
+const defaultApiBaseUrl = 'http://localhost:5000/api/v1';
 
 function normalizeApiBaseUrl(rawUrl?: string) {
   if (!rawUrl) return defaultApiBaseUrl;
