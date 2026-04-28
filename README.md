@@ -9,10 +9,10 @@ Next.js App Router frontend for OCR document conversion with a self-contained Fa
 ```bash
 python -m scripts.storage_admin storage:init
 python -m scripts.storage_admin db:init
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 5000
 ```
 
-Backend URL: `http://localhost:8000`  
+Backend URL: `http://localhost:5000`  
 API prefix: `/api/v1`
 
 ### 2) Configure frontend environment
@@ -24,7 +24,7 @@ cp .env.example .env.local
 Default API is already local:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
 ```
 
 ### 3) Run frontend

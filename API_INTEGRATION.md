@@ -4,14 +4,14 @@
 
 Frontend API base URL:
 
-- Local: `http://localhost:8000/api/v1`
+- Local: `http://localhost:5000/api/v1`
 - Production example: `https://api.example.com/api/v1`
 
 Configured via environment variables:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
-API_BASE_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+API_BASE_URL=http://localhost:5000/api/v1
 ```
 
 ## Backend startup
@@ -19,13 +19,13 @@ API_BASE_URL=http://localhost:8000/api/v1
 ```bash
 python -m scripts.storage_admin storage:init
 python -m scripts.storage_admin db:init
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 5000
 ```
 
 OpenAPI docs:
 
-- `http://localhost:8000/docs`
-- `http://localhost:8000/openapi.json`
+- `http://localhost:5000/docs`
+- `http://localhost:5000/openapi.json`
 
 ## Auth + session model
 
@@ -69,7 +69,7 @@ If Stripe is not configured, backend errors are surfaced with user-friendly UI m
 ## CORS/cookies in local dev
 
 - Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8000`
+- Backend: `http://localhost:5000`
 
 Backend must allow frontend origin in CORS. For HTTP local dev, backend may need:
 
