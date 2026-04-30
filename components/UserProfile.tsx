@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getCurrentUserProfile } from '@/lib/auth';
 import { AuthMeResponse } from '@/lib/types';
+import { Toast } from '@/components/Toast';
 
 export function UserProfile() {
   const [profile, setProfile] = useState<AuthMeResponse | null>(null);
@@ -23,6 +24,8 @@ export function UserProfile() {
   }, []);
 
   return (
+    <>
+      <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
     <div className="card" style={{ marginBottom: 16, display: 'grid', gap: 16 }}>
 
 
@@ -47,5 +50,6 @@ export function UserProfile() {
 
       {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
     </div>
+    </>
   );
 }

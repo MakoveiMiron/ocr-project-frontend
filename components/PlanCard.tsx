@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plan } from '@/lib/types';
 import { createBillingCheckout } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
+import { Toast } from '@/components/Toast';
 
 export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticated: boolean }) {
   const [error, setError] = useState('');

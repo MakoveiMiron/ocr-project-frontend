@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/lib/api';
 import { OrganizationMember, OrganizationSummary } from '@/lib/types';
+import { Toast } from '@/components/Toast';
 
 function MembersContent() {
   const [organization, setOrganization] = useState<OrganizationSummary | null>(null);
@@ -27,7 +28,9 @@ function MembersContent() {
   }, []);
 
   return (
-    <section className="container" style={{ paddingBottom: 40 }}>
+    <>
+      <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
+    <section className="container page">
       <div className="card">
         <h1 style={{ marginTop: 0 }}>Organization members</h1>
         {organization ? (
@@ -61,6 +64,7 @@ function MembersContent() {
         </table>
       </div>
     </section>
+    </>
   );
 }
 

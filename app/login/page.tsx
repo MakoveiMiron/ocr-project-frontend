@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithSession, signOut, startOidcLogin } from '@/lib/auth';
 import { config } from '@/lib/config';
 import { useAuthStatus } from '@/lib/useAuthStatus';
+import { Toast } from '@/components/Toast';
 
 function LoginContent() {
   const [message, setMessage] = useState('');
@@ -61,7 +62,9 @@ function LoginContent() {
   }
 
   return (
-    <section className="container auth-layout" style={{ paddingBottom: 40 }}>
+    <>
+      <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
+    <section className="container auth-layout">
       <div className="card auth-card">
         <h1 style={{ marginTop: 0 }}>Sign in</h1>
         <p className="small">
@@ -114,6 +117,7 @@ function LoginContent() {
         {message ? <p className="small">{message}</p> : null}
       </div>
     </section>
+    </>
   );
 }
 

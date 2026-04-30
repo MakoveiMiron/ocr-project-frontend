@@ -11,8 +11,8 @@ export function NavLinks() {
 
   return (
     <>
-      <Link href="/">Home</Link>
-      {isAuthenticated && !isProfilePage ? <Link href="/subscription">Subscription</Link> : null}
+      <Link href='/' aria-current={pathname === '/' ? 'page' : undefined} className={`nav-link${pathname === '/' ? ' active' : ''}`}>Home</Link>
+      {isAuthenticated && !isProfilePage ? <Link href='/subscription' aria-current={pathname === '/subscription' ? 'page' : undefined} className={`nav-link${pathname === '/subscription' ? ' active' : ''}`}>Subscription</Link> : null}
     </>
   );
 }

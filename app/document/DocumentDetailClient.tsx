@@ -14,6 +14,7 @@ import {
 } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
 import { DocumentDetail } from '@/lib/types';
+import { Toast } from '@/components/Toast';
 
 export default function DocumentDetailClient() {
   const searchParams = useSearchParams();
@@ -176,10 +177,10 @@ export default function DocumentDetailClient() {
   }
 
   return (
-    <section className="container" style={{ paddingBottom: 40 }}>
+    <section className="container page">
+      <Toast message={message} tone={message.toLowerCase().includes('fail') || message.toLowerCase().includes('missing') || message.toLowerCase().includes('invalid') ? 'error' : 'info'} onClose={() => setMessage('')} />
       <div className="card">
         <h1 style={{ marginTop: 0 }}>Conversion status</h1>
-        {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
         {!document ? <p className="small">Loading...</p> : (
           <div className="grid" style={{ gap: 12 }}>
             <p className="small"><strong>File:</strong> {document.original_filename}</p>
