@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { registerAndSignIn } from '@/lib/auth';
 import { AccountType, PlanCode } from '@/lib/types';
+import { Toast } from '@/components/Toast';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -62,7 +63,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <section className="container auth-layout" style={{ paddingBottom: 40 }}>
+    <>
+      <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
+    <section className="container auth-layout">
       <form className="card auth-card" onSubmit={handleSubmit}>
         <h1 style={{ marginTop: 0, textAlign: 'center' }}>Create your account</h1>
         <p className="small" style={{ textAlign: 'center' }}>
@@ -156,5 +159,6 @@ export default function RegisterPage() {
         {message ? <p className="small" style={{ textAlign: 'center' }}>{message}</p> : null}
       </form>
     </section>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { completeOidcCallback, consumePostLoginRedirect } from '@/lib/auth';
+import { Toast } from '@/components/Toast';
 
 function LoginCallbackContent() {
   const [message, setMessage] = useState('Finalizing sign in...');
@@ -44,13 +45,16 @@ function LoginCallbackContent() {
   }, [router, searchParams]);
 
   return (
-    <section className="container" style={{ paddingBottom: 40 }}>
+    <>
+      <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
+    <section className="container page">
       <div className="card" style={{ maxWidth: 680 }}>
         <h1 style={{ marginTop: 0 }}>OIDC callback</h1>
         <p className="small">{message}</p>
         {failed ? <Link className="btn btn-primary" href="/login">Back to sign in</Link> : null}
       </div>
     </section>
+    </>
   );
 }
 

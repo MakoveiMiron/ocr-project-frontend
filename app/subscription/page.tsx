@@ -6,6 +6,7 @@ import { PlanCard } from '@/components/PlanCard';
 import { createBillingPortal } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
 import { useAuthStatus } from '@/lib/useAuthStatus';
+import { Toast } from '@/components/Toast';
 import { Plan } from '@/lib/types';
 
 const plans: Plan[] = [
@@ -54,7 +55,9 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <section className="container" style={{ paddingBottom: 40 }}>
+    <>
+      <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
+    <section className="container page">
       <div className="card" style={{ marginBottom: 16 }}>
         <h1 style={{ marginTop: 0 }}>Manage subscription</h1>
         <p className="small">
@@ -71,5 +74,6 @@ export default function SubscriptionPage() {
         {plans.map((plan) => <PlanCard key={plan.code} plan={plan} isAuthenticated={isAuthenticated} />)}
       </div>
     </section>
+    </>
   );
 }
