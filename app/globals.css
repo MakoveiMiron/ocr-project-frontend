@@ -5,3 +5,5 @@ html[data-theme='light']{color-scheme:light;--background:#f5f7fc;--foreground:#1
 @media (max-width:900px){.grid-2,.grid-3,.hero-grid,.kpis{grid-template-columns:1fr}.topnav{flex-direction:column;align-items:flex-start}.toast-viewport{right:50%;transform:translateX(50%);top:auto;bottom:16px}}
 @media (max-width:560px){.container{padding:0 14px}.page{padding:18px 0 32px}.hero{padding:30px 14px 14px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(5,8,20,.55);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:40;padding:20px}.modal{width:min(460px,100%);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:18px;display:grid;gap:12px}.modal-title{margin:0}.modal-actions{justify-content:flex-end}

@@ -15,6 +15,7 @@ import {
 import { getOptionalAccessToken } from '@/lib/auth';
 import { DocumentDetail } from '@/lib/types';
 import { Toast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export default function DocumentDetailClient() {
   const searchParams = useSearchParams();
@@ -29,6 +30,7 @@ export default function DocumentDetailClient() {
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [wasDownloaded, setWasDownloaded] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const hasTriggeredDownload = useRef(false);
 
   useEffect(() => {
@@ -153,8 +155,6 @@ export default function DocumentDetailClient() {
 
   async function handleDeleteDocument() {
     if (!documentId || isDeleting) return;
-    const shouldDelete = window.confirm('Delete this document now? This cannot be undone.');
-    if (!shouldDelete) return;
 
     setIsDeleting(true);
     try {
@@ -162,6 +162,7 @@ export default function DocumentDetailClient() {
       await deleteDocument(documentId, token);
       window.sessionStorage.removeItem(`auto-download-consumed:${documentId}`);
       setMessage('Document deleted.');
+      setIsDeleteConfirmOpen(false);
       router.push('/');
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
@@ -179,6 +180,16 @@ export default function DocumentDetailClient() {
   return (
     <section className="container page">
       <Toast message={message} tone={message.toLowerCase().includes('fail') || message.toLowerCase().includes('missing') || message.toLowerCase().includes('invalid') ? 'error' : 'info'} onClose={() => setMessage('')} />
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="Delete document"
+        description="Delete this document now? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        isBusy={isDeleting}
+        onCancel={() => { if (!isDeleting) setIsDeleteConfirmOpen(false); }}
+        onConfirm={() => { void handleDeleteDocument(); }}
+      />
       <div className="card">
         <h1 style={{ marginTop: 0 }}>Conversion status</h1>
         {!document ? <p className="small">Loading...</p> : (
@@ -222,8 +233,8 @@ export default function DocumentDetailClient() {
                 <a className="btn" href={`/document?documentId=${documentId}&download=1`}>Download DOCX</a>
               ) : null}
               {document.docx_available && wasDownloaded ? (
-                <button type="button" className="btn btn-danger" onClick={() => void handleDeleteDocument()} disabled={isDeleting}>
-                  {isDeleting ? 'Deleting…' : 'Delete'}
+                <button type="button" className="btn btn-danger" onClick={() => setIsDeleteConfirmOpen(true)} disabled={isDeleting}>
+                  Delete
                 </button>
               ) : null}
               {document.qa_report_url ? (
