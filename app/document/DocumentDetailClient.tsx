@@ -17,6 +17,25 @@ import { DocumentDetail } from '@/lib/types';
 import { Toast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
+
+function getDownloadFilename(response: Response, originalFilename: string | undefined, documentId: string) {
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const utf8Name = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (utf8Name) {
+    try {
+      return decodeURIComponent(utf8Name).replace(/[\\/]/g, '_');
+    } catch {
+      return utf8Name.replace(/[\\/]/g, '_');
+    }
+  }
+
+  const asciiName = disposition.match(/filename="?([^";]+)"?/i)?.[1];
+  if (asciiName) return asciiName.replace(/[\\/]/g, '_');
+
+  const stem = (originalFilename || documentId).replace(/\.[^.]+$/i, '');
+  return `${stem}.docx`;
+}
+
 export default function DocumentDetailClient() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -24,8 +43,6 @@ export default function DocumentDetailClient() {
   const documentId = useMemo(() => searchParams.get('documentId') ?? '', [searchParams]);
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [message, setMessage] = useState('');
-  const [translationFriendly, setTranslationFriendly] = useState(true);
-  const [preserveLayout, setPreserveLayout] = useState(false);
   const [irUrl, setIrUrl] = useState<string | null>(null);
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,8 +77,6 @@ export default function DocumentDetailClient() {
         ].filter(Boolean);
 
         setDocument(detail);
-        setTranslationFriendly(detail.translation_friendly ?? true);
-        setPreserveLayout(detail.preserve_layout ?? false);
         setIrUrl(irData?.ir_url ?? null);
         if (qaData?.qa_report_url && !detail.qa_report_url) {
           setDocument((current) => (current ? { ...current, qa_report_url: qaData.qa_report_url } : current));
@@ -103,7 +118,7 @@ export default function DocumentDetailClient() {
 
   useEffect(() => {
     async function maybeDownload() {
-      if (searchParams.get('download') !== '1' || !documentId || hasTriggeredDownload.current) return;
+      if (searchParams.get('download') !== '1' || !documentId || !document || hasTriggeredDownload.current) return;
       const downloadKey = `auto-download-consumed:${documentId}`;
       if (window.sessionStorage.getItem(downloadKey) === '1') {
         router.replace(`${pathname}?documentId=${documentId}`, { scroll: false });
@@ -119,7 +134,7 @@ export default function DocumentDetailClient() {
         const url = URL.createObjectURL(blob);
         const link = window.document.createElement('a');
         link.href = url;
-        link.download = `${document?.original_filename?.replace(/\.pdf$/i, '') || documentId}.docx`;
+        link.download = getDownloadFilename(response, document?.original_filename, documentId);
         window.document.body.appendChild(link);
         link.click();
         link.remove();
@@ -133,7 +148,7 @@ export default function DocumentDetailClient() {
     }
 
     void maybeDownload();
-  }, [document?.original_filename, documentId, pathname, router, searchParams]);
+  }, [document, documentId, pathname, router, searchParams]);
 
   async function handleReprocess() {
     if (!documentId) return;
@@ -142,8 +157,8 @@ export default function DocumentDetailClient() {
       const token = await getOptionalAccessToken();
       await reprocessDocument(documentId, {
         engine_policy: 'auto',
-        translation_friendly: translationFriendly,
-        preserve_layout: preserveLayout
+        translation_friendly: false,
+        preserve_layout: true
       }, token);
       setMessage('Reprocess job queued successfully.');
     } catch (error) {
@@ -205,26 +220,6 @@ export default function DocumentDetailClient() {
             <p className="small"><strong>Retention deadline:</strong> {document.retention_deadline ?? '-'}</p>
             <p className="small"><strong>Cleanup status:</strong> {document.cleanup_status ?? '-'}</p>
             <p className="small"><strong>Error message:</strong> {document.error_message ?? '-'}</p>
-            <div className="small" style={{ display: 'grid', gap: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={translationFriendly}
-                  onChange={(e) => setTranslationFriendly(e.target.checked)}
-                  disabled={isReprocessing}
-                />
-                translation_friendly
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={preserveLayout}
-                  onChange={(e) => setPreserveLayout(e.target.checked)}
-                  disabled={isReprocessing}
-                />
-                preserve_layout
-              </label>
-            </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button type="button" className="btn" onClick={handleReprocess} disabled={isReprocessing}>
                 {isReprocessing ? 'Reprocessing...' : 'Reprocess'}
