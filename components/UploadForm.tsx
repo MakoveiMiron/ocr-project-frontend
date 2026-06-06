@@ -12,6 +12,7 @@ import {
 import { getOptionalAccessToken } from '@/lib/auth';
 
 type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
+type LayoutMode = 'fixed' | 'flow';
 
 type FileJobState = {
   fileName: string;
@@ -31,6 +32,7 @@ export function UploadForm({
   const [isBusy, setIsBusy] = useState(false);
   const [stage, setStage] = useState<UploadStage>('idle');
   const [fileStatuses, setFileStatuses] = useState<FileJobState[]>([]);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('flow');
 
   useEffect(() => {
     if (!message) return;
@@ -140,7 +142,8 @@ export function UploadForm({
           {
             engine_policy: 'auto',
             translation_friendly: false,
-            preserve_layout: true
+            preserve_layout: layoutMode === 'fixed',
+            layout_mode: layoutMode
           },
           token
         );
@@ -192,6 +195,32 @@ export function UploadForm({
           onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
         />
       </div>
+
+      <fieldset className="field layout-mode-field" disabled={isBusy}>
+        <legend className="field-label">Layout mode</legend>
+        <div className="radio-group">
+          <label className="radio-option">
+            <input
+              type="radio"
+              name="layoutMode"
+              value="fixed"
+              checked={layoutMode === 'fixed'}
+              onChange={() => setLayoutMode('fixed')}
+            />
+            <span>Fixed layout</span>
+          </label>
+          <label className="radio-option">
+            <input
+              type="radio"
+              name="layoutMode"
+              value="flow"
+              checked={layoutMode === 'flow'}
+              onChange={() => setLayoutMode('flow')}
+            />
+            <span>Flow layout</span>
+          </label>
+        </div>
+      </fieldset>
 
       <div className="actions-row">
         <button

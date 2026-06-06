@@ -120,10 +120,13 @@ export interface UploadInitResponse {
   storage_key: string;
 }
 
+export type LayoutMode = 'fixed' | 'flow';
+
 export interface ProcessDocumentRequest {
   engine_policy: string;
   translation_friendly?: boolean;
   preserve_layout?: boolean;
+  layout_mode?: LayoutMode;
 }
 
 export interface ProcessDocumentResponse {
