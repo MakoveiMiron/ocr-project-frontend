@@ -32,7 +32,7 @@ export function UploadForm({
   const [isBusy, setIsBusy] = useState(false);
   const [stage, setStage] = useState<UploadStage>('idle');
   const [fileStatuses, setFileStatuses] = useState<FileJobState[]>([]);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('flow');
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('fixed');
 
   useEffect(() => {
     if (!message) return;
