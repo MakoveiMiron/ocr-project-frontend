@@ -6,6 +6,7 @@ import {
   ApiError,
   deleteDocument,
   downloadDocument,
+  downloadDocumentArtifact,
   fetchDocumentArtifacts,
   fetchDocumentDetail,
   fetchDocumentIr,
@@ -13,10 +14,137 @@ import {
   reprocessDocument
 } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
-import { DocumentDetail } from '@/lib/types';
+import { DocumentArtifact, DocumentDetail } from '@/lib/types';
 import { Toast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
+function isDocxArtifact(artifact: DocumentArtifact) {
+  return artifact.kind === 'docx' || artifact.type === 'docx';
+}
+
+function artifactLabel(artifact: DocumentArtifact) {
+  if (artifact.label) return artifact.label;
+
+  if (artifact.variant === 'legacy' || artifact.variant === 'current') {
+    return 'DOCX - Document AI layout parser';
+  }
+
+  if (artifact.variant === 'ir') {
+    return 'DOCX - Intermediate Representation';
+  }
+
+  return artifact.filename ?? artifact.name ?? 'DOCX document';
+}
+
+function artifactFilename(artifact: DocumentArtifact, documentId: string) {
+  return artifact.filename ?? artifact.name ?? `${documentId}-${artifact.variant ?? 'document'}.docx`;
+}
+
+function artifactDownloadUrl(artifact: DocumentArtifact) {
+  return artifact.download_url ?? artifact.downloadUrl ?? artifact.url;
+}
+
+function unavailableArtifactMessage(artifact: DocumentArtifact) {
+  if (artifact.variant === 'ir') {
+    return 'Intermediate Representation export failed or was not generated.';
+  }
+
+  return `${artifactLabel(artifact)} is not available.`;
+}
+
+function fallbackLegacyArtifact(documentId: string): DocumentArtifact {
+  return {
+    kind: 'docx',
+    type: 'docx',
+    variant: 'legacy',
+    label: 'DOCX - legacy',
+    filename: `${documentId}-legacy.docx`,
+    download_url: `/api/v1/documents/${documentId}/download?variant=legacy`,
+    available: true
+  };
+}
+
+function downloadErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 404) return 'This document variant is not available.';
+    if (error.status === 410) return 'This document has expired and was already deleted.';
+  }
+
+  return error instanceof Error ? error.message : 'Download failed.';
+}
+
+function DownloadableArtifacts({
+  documentId,
+  artifacts,
+  docxAvailable,
+  onDownloadArtifact
+}: {
+  documentId: string;
+  artifacts?: DocumentArtifact[] | null;
+  docxAvailable: boolean;
+  onDownloadArtifact: (artifact: DocumentArtifact) => void;
+}) {
+  const docxArtifacts = (artifacts ?? []).filter(isDocxArtifact);
+  const availableDocxArtifacts = docxArtifacts.filter((artifact) => artifact.available !== false);
+
+  if (!availableDocxArtifacts.length) {
+    if (docxArtifacts.length) {
+      return (
+        <section className="small">
+          <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
+          <div className="grid" style={{ gap: 8 }}>
+            {docxArtifacts.map((artifact, index) => (
+              <div key={`${artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel" style={{ padding: 12 }}>
+                <button type="button" className="btn" disabled>{artifactLabel(artifact)}</button>
+                <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (!docxAvailable) return null;
+
+    return (
+      <section className="small">
+        <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
+        <button type="button" className="btn" onClick={() => onDownloadArtifact(fallbackLegacyArtifact(documentId))}>
+          Download DOCX - legacy
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="small">
+      <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
+      <div className="grid" style={{ gap: 8 }}>
+        {docxArtifacts.map((artifact, index) => {
+          const key = artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? `docx-${index}`;
+          const label = artifactLabel(artifact);
+          const filename = artifact.filename ?? artifact.name;
+          const available = artifact.available !== false;
+
+          return (
+            <div key={`${key}-${index}`} className="panel" style={{ padding: 12 }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => onDownloadArtifact(artifact)}
+                disabled={!available}
+              >
+                Download {label}
+              </button>
+              {filename ? <div className="muted" style={{ marginTop: 6 }}>{filename}</div> : null}
+              {!available ? <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div> : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 function getDownloadFilename(response: Response, originalFilename: string | undefined, documentId: string) {
   const disposition = response.headers.get('content-disposition') ?? '';
@@ -129,12 +257,15 @@ export default function DocumentDetailClient() {
       window.sessionStorage.setItem(downloadKey, '1');
       try {
         const token = await getOptionalAccessToken();
-        const response = await downloadDocument(documentId, token);
+        const artifact = (document.artifacts ?? []).find((item) => isDocxArtifact(item) && item.available !== false && artifactDownloadUrl(item));
+        const response = artifact
+          ? await downloadDocumentArtifact(artifactDownloadUrl(artifact) as string, token)
+          : await downloadDocument(documentId, token);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const link = window.document.createElement('a');
         link.href = url;
-        link.download = getDownloadFilename(response, document?.original_filename, documentId);
+        link.download = artifact ? artifactFilename(artifact, documentId) : getDownloadFilename(response, document?.original_filename, documentId);
         window.document.body.appendChild(link);
         link.click();
         link.remove();
@@ -143,12 +274,38 @@ export default function DocumentDetailClient() {
       } catch (error) {
         hasTriggeredDownload.current = false;
         window.sessionStorage.removeItem(downloadKey);
-        setMessage(error instanceof Error ? error.message : 'Download failed.');
+        setMessage(downloadErrorMessage(error));
       }
     }
 
     void maybeDownload();
   }, [document, documentId, pathname, router, searchParams]);
+
+  async function handleDownloadArtifact(artifact: DocumentArtifact) {
+    const downloadUrl = artifactDownloadUrl(artifact);
+    if (!downloadUrl) {
+      setMessage('Missing artifact download URL.');
+      return;
+    }
+
+    try {
+      const token = await getOptionalAccessToken();
+      const response = await downloadDocumentArtifact(downloadUrl, token);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = artifactFilename(artifact, documentId);
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      window.sessionStorage.setItem(`auto-download-consumed:${documentId}`, '1');
+      setWasDownloaded(true);
+    } catch (error) {
+      setMessage(downloadErrorMessage(error));
+    }
+  }
 
   async function handleReprocess() {
     if (!documentId) return;
@@ -224,9 +381,6 @@ export default function DocumentDetailClient() {
               <button type="button" className="btn" onClick={handleReprocess} disabled={isReprocessing}>
                 {isReprocessing ? 'Reprocessing...' : 'Reprocess'}
               </button>
-              {document.docx_available ? (
-                <a className="btn" href={`/document?documentId=${documentId}&download=1`}>Download DOCX</a>
-              ) : null}
               {document.docx_available && wasDownloaded ? (
                 <button type="button" className="btn btn-danger" onClick={() => setIsDeleteConfirmOpen(true)} disabled={isDeleting}>
                   Delete
@@ -239,6 +393,12 @@ export default function DocumentDetailClient() {
                 <a className="btn" href={irUrl} target="_blank" rel="noreferrer">Download IR JSON</a>
               ) : null}
             </div>
+            <DownloadableArtifacts
+              documentId={documentId}
+              artifacts={document.artifacts}
+              docxAvailable={document.docx_available}
+              onDownloadArtifact={handleDownloadArtifact}
+            />
             {document.warnings?.length ? (
               <div className="small">
                 <strong>Warnings:</strong>
@@ -247,13 +407,13 @@ export default function DocumentDetailClient() {
                 </ul>
               </div>
             ) : null}
-            {document.artifacts?.length ? (
+            {document.artifacts?.filter((artifact) => !isDocxArtifact(artifact)).length ? (
               <div className="small">
-                <strong>Artifacts:</strong>
+                <strong>Other artifacts:</strong>
                 <ul style={{ margin: '6px 0 0 20px' }}>
-                  {document.artifacts.map((artifact, index) => (
-                    <li key={`${artifact.kind}-${artifact.storage_key}-${index}`}>
-                      {artifact.kind}: {artifact.storage_key}
+                  {document.artifacts.filter((artifact) => !isDocxArtifact(artifact)).map((artifact, index) => (
+                    <li key={`${artifact.kind ?? artifact.type ?? 'artifact'}-${artifact.storage_key ?? artifact.url ?? index}`}>
+                      {artifactLabel(artifact)}{artifact.storage_key ? `: ${artifact.storage_key}` : ''}
                     </li>
                   ))}
                 </ul>
