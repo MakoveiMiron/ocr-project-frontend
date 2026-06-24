@@ -210,6 +210,31 @@ export async function apiFetchRaw(
   return response;
 }
 
+export async function apiFetchRawUrl(
+  pathOrUrl: string,
+  init?: RequestInit,
+  accessToken?: string,
+  includeAuth = true
+): Promise<Response> {
+  const headers = buildHeaders(init, accessToken, includeAuth);
+
+  let response: Response;
+  try {
+    response = await fetch(resolveApiUrl(pathOrUrl), {
+      ...init,
+      headers,
+      credentials: 'include',
+      cache: 'no-store'
+    });
+  } catch (error) {
+    throw toNetworkError(pathOrUrl, error);
+  }
+
+  await assertResponseOk(response, pathOrUrl);
+
+  return response;
+}
+
 export async function uploadDocumentBinary(uploadUrl: string, file: File, accessToken?: string) {
   const headers = buildHeaders(undefined, accessToken, true);
   const formData = new FormData();
@@ -356,6 +381,10 @@ export function fetchDocumentIr(documentId: string, accessToken?: string) {
 
 export function downloadDocument(documentId: string, accessToken?: string) {
   return apiFetchRaw(`/documents/${documentId}/download`, undefined, accessToken);
+}
+
+export function downloadDocumentArtifact(downloadUrl: string, accessToken?: string) {
+  return apiFetchRawUrl(downloadUrl, undefined, accessToken);
 }
 
 export function deleteDocument(documentId: string, accessToken?: string) {

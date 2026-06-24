@@ -135,8 +135,18 @@ export interface ProcessDocumentResponse {
 }
 
 export interface DocumentArtifact {
-  kind: string;
-  storage_key: string;
+  kind?: string;
+  type?: string;
+  variant?: 'legacy' | 'current' | 'ir' | string;
+  label?: string;
+  name?: string;
+  filename?: string;
+  download_url?: string;
+  downloadUrl?: string;
+  url?: string;
+  content_type?: string;
+  available?: boolean;
+  storage_key?: string;
 }
 
 export interface DocumentQaResponse {
