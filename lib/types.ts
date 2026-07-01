@@ -145,8 +145,10 @@ export interface DocumentArtifact {
   downloadUrl?: string;
   url?: string;
   content_type?: string;
+  contentType?: string;
   available?: boolean;
   storage_key?: string;
+  storageKey?: string;
 }
 
 export interface DocumentQaResponse {

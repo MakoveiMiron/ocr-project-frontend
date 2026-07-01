@@ -19,29 +19,87 @@ import { Toast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 function isDocxArtifact(artifact: DocumentArtifact) {
-  return artifact.kind === 'docx' || artifact.type === 'docx';
+  const kind = artifact.kind?.toLowerCase();
+  const type = artifact.type?.toLowerCase();
+  const variant = artifact.variant?.toLowerCase();
+
+  return kind === 'docx' || type === 'docx' || variant === 'legacy' || variant === 'ir';
+}
+
+function isAvailableArtifact(artifact: DocumentArtifact) {
+  return artifact.available !== false;
+}
+
+function isDownloadableArtifact(artifact: DocumentArtifact) {
+  return isAvailableArtifact(artifact) && Boolean(artifactDownloadUrl(artifact));
+}
+
+function isOtherArtifact(artifact: DocumentArtifact) {
+  return !isDocxArtifact(artifact);
 }
 
 function artifactLabel(artifact: DocumentArtifact) {
-  if (artifact.label) return artifact.label;
+  const label = artifact.label?.trim();
+  if (label) return label;
 
-  if (artifact.variant === 'legacy' || artifact.variant === 'current') {
-    return 'DOCX - Document AI layout parser';
+  const variant = artifact.variant?.toLowerCase();
+
+  if (variant === 'legacy') {
+    return 'DOCX - legacy layout composer';
   }
 
-  if (artifact.variant === 'ir') {
-    return 'DOCX - Intermediate Representation';
+  if (variant === 'ir') {
+    return 'DOCX - intermediate representation';
   }
 
-  return artifact.filename ?? artifact.name ?? 'DOCX document';
+  if (variant === 'docling-json') {
+    return 'Docling raw JSON';
+  }
+
+  if (variant === 'docling-markdown') {
+    return 'Docling Markdown';
+  }
+
+  if (variant === 'docling-mapped-layout') {
+    return 'Docling mapped LayoutDocument summary';
+  }
+
+  if (artifact.kind) {
+    return `${artifact.kind.toUpperCase()} artifact`;
+  }
+
+  return artifact.filename ?? artifact.name ?? 'Artifact';
 }
 
 function artifactFilename(artifact: DocumentArtifact, documentId: string) {
-  return artifact.filename ?? artifact.name ?? `${documentId}-${artifact.variant ?? 'document'}.docx`;
+  if (artifact.filename) return artifact.filename;
+  if (artifact.name) return artifact.name;
+
+  const kind = artifact.kind?.toLowerCase();
+  const type = artifact.type?.toLowerCase();
+  const variant = artifact.variant?.toLowerCase() ?? 'artifact';
+  const contentType = (artifact.content_type ?? artifact.contentType)?.toLowerCase();
+  const extension =
+    kind === 'json' ||
+    contentType === 'application/json' ||
+    variant === 'docling-json' ||
+    variant === 'docling-mapped-layout'
+      ? 'json'
+      : kind === 'markdown' ||
+          contentType === 'text/markdown' ||
+          variant === 'docling-markdown'
+        ? 'md'
+        : kind === 'docx' || type === 'docx' || variant === 'legacy' || variant === 'ir'
+          ? 'docx'
+          : 'bin';
+
+  return `${documentId}-${variant}.${extension}`;
 }
 
 function artifactDownloadUrl(artifact: DocumentArtifact) {
-  return artifact.download_url ?? artifact.downloadUrl ?? artifact.url;
+  const storageKey = artifact.storage_key ?? artifact.storageKey;
+
+  return artifact.download_url ?? artifact.downloadUrl ?? artifact.url ?? (storageKey ? `/api/v1/storage/local/${encodeURIComponent(storageKey)}` : undefined);
 }
 
 function unavailableArtifactMessage(artifact: DocumentArtifact) {
@@ -85,64 +143,117 @@ function DownloadableArtifacts({
   onDownloadArtifact: (artifact: DocumentArtifact) => void;
 }) {
   const docxArtifacts = (artifacts ?? []).filter(isDocxArtifact);
-  const availableDocxArtifacts = docxArtifacts.filter((artifact) => artifact.available !== false);
+  const otherArtifacts = (artifacts ?? []).filter(isOtherArtifact);
+  const availableDocxArtifacts = docxArtifacts.filter(isAvailableArtifact);
+
+  const renderOtherArtifacts = () => {
+    if (!otherArtifacts.length) return null;
+
+    return (
+      <section className="small">
+        <h3 style={{ margin: '0 0 8px' }}>Other downloadable artifacts</h3>
+        <div className="grid" style={{ gap: 8 }}>
+          {otherArtifacts.map((artifact, index) => {
+            const key = artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `artifact-${index}`;
+            const label = artifactLabel(artifact);
+            const filename = artifactFilename(artifact, documentId);
+            const storageKey = artifact.storage_key ?? artifact.storageKey;
+            const available = isAvailableArtifact(artifact);
+            const downloadUrl = artifactDownloadUrl(artifact);
+            const downloadable = isDownloadableArtifact(artifact);
+
+            return (
+              <div key={`${key}-${index}`} className="panel" style={{ padding: 12 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => onDownloadArtifact(artifact)}
+                  disabled={!downloadable}
+                >
+                  Download {label}
+                </button>
+                <div style={{ marginTop: 8 }}>
+                  <strong>{label}</strong>
+                </div>
+                <div className="muted" style={{ marginTop: 6 }}>{filename}</div>
+                {storageKey ? <div className="muted" style={{ marginTop: 6 }}>Storage key: {storageKey}</div> : null}
+                {!available ? <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div> : null}
+                {available && !downloadUrl ? <div className="muted" style={{ marginTop: 6 }}>Missing download URL for this artifact.</div> : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
 
   if (!availableDocxArtifacts.length) {
     if (docxArtifacts.length) {
       return (
-        <section className="small">
-          <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
-          <div className="grid" style={{ gap: 8 }}>
-            {docxArtifacts.map((artifact, index) => (
-              <div key={`${artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel" style={{ padding: 12 }}>
-                <button type="button" className="btn" disabled>{artifactLabel(artifact)}</button>
-                <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <>
+          <section className="small">
+            <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
+            <div className="grid" style={{ gap: 8 }}>
+              {docxArtifacts.map((artifact, index) => (
+                <div key={`${artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel" style={{ padding: 12 }}>
+                  <button type="button" className="btn" disabled>{artifactLabel(artifact)}</button>
+                  <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+          {renderOtherArtifacts()}
+        </>
       );
     }
 
-    if (!docxAvailable) return null;
+    if (!docxAvailable) return renderOtherArtifacts();
 
     return (
-      <section className="small">
-        <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
-        <button type="button" className="btn" onClick={() => onDownloadArtifact(fallbackLegacyArtifact(documentId))}>
-          Download DOCX - legacy
-        </button>
-      </section>
+      <>
+        <section className="small">
+          <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
+          <button type="button" className="btn" onClick={() => onDownloadArtifact(fallbackLegacyArtifact(documentId))}>
+            Download DOCX - legacy
+          </button>
+        </section>
+        {renderOtherArtifacts()}
+      </>
     );
   }
 
   return (
-    <section className="small">
-      <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
-      <div className="grid" style={{ gap: 8 }}>
-        {docxArtifacts.map((artifact, index) => {
-          const key = artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? `docx-${index}`;
-          const label = artifactLabel(artifact);
-          const filename = artifact.filename ?? artifact.name;
-          const available = artifact.available !== false;
+    <>
+      <section className="small">
+        <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
+        <div className="grid" style={{ gap: 8 }}>
+          {docxArtifacts.map((artifact, index) => {
+            const key = artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `docx-${index}`;
+            const label = artifactLabel(artifact);
+            const filename = artifactFilename(artifact, documentId);
+            const available = isAvailableArtifact(artifact);
+            const downloadUrl = artifactDownloadUrl(artifact);
 
-          return (
-            <div key={`${key}-${index}`} className="panel" style={{ padding: 12 }}>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => onDownloadArtifact(artifact)}
-                disabled={!available}
-              >
-                Download {label}
-              </button>
-              {filename ? <div className="muted" style={{ marginTop: 6 }}>{filename}</div> : null}
-              {!available ? <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div> : null}
-            </div>
-          );
-        })}
-      </div>
-    </section>
+            return (
+              <div key={`${key}-${index}`} className="panel" style={{ padding: 12 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => onDownloadArtifact(artifact)}
+                  disabled={!available || !downloadUrl}
+                >
+                  Download {label}
+                </button>
+                <div className="muted" style={{ marginTop: 6 }}>{filename}</div>
+                {!available ? <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div> : null}
+                {available && !downloadUrl ? <div className="muted" style={{ marginTop: 6 }}>Missing download URL for this artifact.</div> : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      {renderOtherArtifacts()}
+    </>
   );
 }
 
@@ -404,18 +515,6 @@ export default function DocumentDetailClient() {
                 <strong>Warnings:</strong>
                 <ul style={{ margin: '6px 0 0 20px' }}>
                   {document.warnings.map((warning, index) => <li key={`${warning}-${index}`}>{warning}</li>)}
-                </ul>
-              </div>
-            ) : null}
-            {document.artifacts?.filter((artifact) => !isDocxArtifact(artifact)).length ? (
-              <div className="small">
-                <strong>Other artifacts:</strong>
-                <ul style={{ margin: '6px 0 0 20px' }}>
-                  {document.artifacts.filter((artifact) => !isDocxArtifact(artifact)).map((artifact, index) => (
-                    <li key={`${artifact.kind ?? artifact.type ?? 'artifact'}-${artifact.storage_key ?? artifact.url ?? index}`}>
-                      {artifactLabel(artifact)}{artifact.storage_key ? `: ${artifact.storage_key}` : ''}
-                    </li>
-                  ))}
                 </ul>
               </div>
             ) : null}
