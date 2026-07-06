@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "build:github-pages": "cross-env GITHUB_PAGES=true next build",
-    "serve:out": "npx serve out"
+    "serve:out": "npx serve out",
+    "test:storage": "node --test --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tests/storage.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

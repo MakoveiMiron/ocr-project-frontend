@@ -14,6 +14,7 @@ import {
   reprocessDocument
 } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
+import { encodeStorageKeyForRoute } from '@/lib/storage';
 import { DocumentArtifact, DocumentDetail } from '@/lib/types';
 import { Toast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -68,11 +69,13 @@ function artifactLabel(artifact: DocumentArtifact) {
     return `${artifact.kind.toUpperCase()} artifact`;
   }
 
-  return artifact.filename ?? artifact.name ?? 'Artifact';
+  return artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? 'Artifact';
 }
 
 function artifactFilename(artifact: DocumentArtifact, documentId: string) {
   if (artifact.filename) return artifact.filename;
+  if (artifact.fileName) return artifact.fileName;
+  if (artifact.file_name) return artifact.file_name;
   if (artifact.name) return artifact.name;
 
   const kind = artifact.kind?.toLowerCase();
@@ -97,9 +100,11 @@ function artifactFilename(artifact: DocumentArtifact, documentId: string) {
 }
 
 function artifactDownloadUrl(artifact: DocumentArtifact) {
-  const storageKey = artifact.storage_key ?? artifact.storageKey;
+  const directDownloadUrl = artifact.download_url ?? artifact.downloadUrl ?? artifact.url;
+  if (directDownloadUrl) return directDownloadUrl;
 
-  return artifact.download_url ?? artifact.downloadUrl ?? artifact.url ?? (storageKey ? `/api/v1/storage/local/${encodeURIComponent(storageKey)}` : undefined);
+  const storageKey = artifact.storage_key ?? artifact.storageKey;
+  return storageKey ? `/api/v1/storage/local/${encodeStorageKeyForRoute(storageKey)}` : undefined;
 }
 
 function unavailableArtifactMessage(artifact: DocumentArtifact) {
@@ -154,7 +159,7 @@ function DownloadableArtifacts({
         <h3 style={{ margin: '0 0 8px' }}>Other downloadable artifacts</h3>
         <div className="grid" style={{ gap: 8 }}>
           {otherArtifacts.map((artifact, index) => {
-            const key = artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `artifact-${index}`;
+            const key = artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `artifact-${index}`;
             const label = artifactLabel(artifact);
             const filename = artifactFilename(artifact, documentId);
             const storageKey = artifact.storage_key ?? artifact.storageKey;
@@ -195,7 +200,7 @@ function DownloadableArtifacts({
             <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
             <div className="grid" style={{ gap: 8 }}>
               {docxArtifacts.map((artifact, index) => (
-                <div key={`${artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel" style={{ padding: 12 }}>
+                <div key={`${artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel" style={{ padding: 12 }}>
                   <button type="button" className="btn" disabled>{artifactLabel(artifact)}</button>
                   <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div>
                 </div>
@@ -228,7 +233,7 @@ function DownloadableArtifacts({
         <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
         <div className="grid" style={{ gap: 8 }}>
           {docxArtifacts.map((artifact, index) => {
-            const key = artifact.variant ?? artifact.filename ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `docx-${index}`;
+            const key = artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `docx-${index}`;
             const label = artifactLabel(artifact);
             const filename = artifactFilename(artifact, documentId);
             const available = isAvailableArtifact(artifact);
@@ -395,7 +400,7 @@ export default function DocumentDetailClient() {
   async function handleDownloadArtifact(artifact: DocumentArtifact) {
     const downloadUrl = artifactDownloadUrl(artifact);
     if (!downloadUrl) {
-      setMessage('Missing artifact download URL.');
+      setMessage('This artifact is present, but it does not include a download URL or storage key.');
       return;
     }
 
