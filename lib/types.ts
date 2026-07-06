@@ -141,6 +141,8 @@ export interface DocumentArtifact {
   label?: string;
   name?: string;
   filename?: string;
+  fileName?: string;
+  file_name?: string;
   download_url?: string;
   downloadUrl?: string;
   url?: string;
