@@ -58,17 +58,22 @@ export default function SubscriptionPage() {
     <>
       <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
     <section className="container page">
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h1 style={{ marginTop: 0 }}>Manage subscription</h1>
-        <p className="small">
+      <header className="page-header">
+        <p className="eyebrow">Billing</p>
+        <h1>Manage subscription</h1>
+        <p className="small muted" style={{ maxWidth: 640 }}>
           Choose a plan and continue to Stripe checkout. Subscription renewals/resubscriptions are handled on the backend
           via Stripe webhooks; this frontend only initiates checkout and opens the billing portal.
         </p>
-        {isLoading ? <p className="small">Checking session...</p> : null}
+      </header>
+      <div className="card" style={{ marginBottom: 20 }}>
+        {isLoading ? <p className="small processing-indicator" style={{ marginBottom: 12 }}><span className="spinner" />Checking session...</p> : null}
         {!isAuthenticated && !isLoading ? <p className="small" style={{ color: 'var(--danger)' }}>Sign in is required for billing actions.</p> : null}
-        <button className="btn btn-secondary" onClick={openPortal}>Open billing portal</button>
-        {!isAuthenticated ? <Link href="/login" className="btn btn-primary" style={{ marginLeft: 8 }}>Sign in</Link> : null}
-        {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
+        <div className="actions-row">
+          <button className="btn btn-secondary" onClick={openPortal}>Open billing portal</button>
+          {!isAuthenticated ? <Link href="/login" className="btn btn-primary">Sign in</Link> : null}
+        </div>
+        {message ? <p className="small" style={{ color: 'var(--danger)', marginTop: 10, marginBottom: 0 }}>{message}</p> : null}
       </div>
       <div className="grid grid-3">
         {plans.map((plan) => <PlanCard key={plan.code} plan={plan} isAuthenticated={isAuthenticated} />)}

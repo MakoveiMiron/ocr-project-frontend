@@ -26,23 +26,31 @@ export function UserProfile() {
   return (
     <>
       <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
-    <div className="card" style={{ marginBottom: 16, display: 'grid', gap: 16 }}>
+    <div className="grid grid-2">
 
-
-      <div className="card" style={{ margin: 0 }}>
-        <h3 style={{ marginTop: 0 }}>Personal details</h3>
+      <div className="card">
+        <h3>Personal details</h3>
         {profile ? (
-          <div className="small" style={{ display: 'grid', gap: 10 }}>
-            <div><strong>Full name</strong><br />{profile.name}</div>
-            <div><strong>Email address</strong><br />{profile.email}</div>
-            <div><strong>Organization ID</strong><br />{profile.organization_id}</div>
-          </div>
-        ) : <p className="small" style={{ marginBottom: 0 }}>Loading profile…</p>}
+          <dl className="stat-grid" style={{ gridTemplateColumns: '1fr' }}>
+            <div className="stat-cell">
+              <dt>Full name</dt>
+              <dd>{profile.name}</dd>
+            </div>
+            <div className="stat-cell">
+              <dt>Email address</dt>
+              <dd>{profile.email}</dd>
+            </div>
+            <div className="stat-cell">
+              <dt>Organization ID</dt>
+              <dd>{profile.organization_id}</dd>
+            </div>
+          </dl>
+        ) : <p className="small muted">Loading profile…</p>}
       </div>
 
-      <div className="card" style={{ margin: 0 }}>
-        <h3 style={{ marginTop: 0 }}>Manage subscription</h3>
-        <p className="small">
+      <div className="card">
+        <h3>Manage subscription</h3>
+        <p className="small muted">
           Open billing to change plan, payment method, or renewal details.
         </p>
         <Link href="/subscription" className="btn btn-primary">Manage subscription</Link>

@@ -31,37 +31,42 @@ function MembersContent() {
     <>
       <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
     <section className="container page">
-      <div className="card">
-        <h1 style={{ marginTop: 0 }}>Organization members</h1>
+      <header className="page-header">
+        <p className="eyebrow">Organization</p>
+        <h1>Members</h1>
         {organization ? (
-          <p className="small">
+          <p className="small muted">
             <strong>{organization.name}</strong> ({organization.slug}) — your role: {organization.role}
           </p>
-        ) : <p className="small">Loading organization…</p>}
+        ) : <p className="small muted">Loading organization…</p>}
         {message ? <p className="small" style={{ color: 'var(--danger)' }}>{message}</p> : null}
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((member) => (
-              <tr key={member.user_id}>
-                <td>{member.full_name}</td>
-                <td>{member.email}</td>
-                <td>{member.role}</td>
-              </tr>
-            ))}
-            {members.length === 0 ? (
+      </header>
+      <div className="card">
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={3} className="small">No members found.</td>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
               </tr>
-            ) : null}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {members.map((member) => (
+                <tr key={member.user_id}>
+                  <td>{member.full_name}</td>
+                  <td>{member.email}</td>
+                  <td>{member.role}</td>
+                </tr>
+              ))}
+              {members.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="small muted">No members found.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
     </>

@@ -155,9 +155,9 @@ function DownloadableArtifacts({
     if (!otherArtifacts.length) return null;
 
     return (
-      <section className="small">
-        <h3 style={{ margin: '0 0 8px' }}>Other downloadable artifacts</h3>
-        <div className="grid" style={{ gap: 8 }}>
+      <section>
+        <h3>Other downloadable artifacts</h3>
+        <div className="stack-sm">
           {otherArtifacts.map((artifact, index) => {
             const key = artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `artifact-${index}`;
             const label = artifactLabel(artifact);
@@ -168,22 +168,22 @@ function DownloadableArtifacts({
             const downloadable = isDownloadableArtifact(artifact);
 
             return (
-              <div key={`${key}-${index}`} className="panel" style={{ padding: 12 }}>
+              <div key={`${key}-${index}`} className="panel panel-row">
+                <div className="stack-sm" style={{ gap: 2, minWidth: 0 }}>
+                  <strong className="small">{label}</strong>
+                  <span className="muted small" style={{ overflowWrap: 'anywhere' }}>{filename}</span>
+                  {storageKey ? <span className="muted small" style={{ overflowWrap: 'anywhere' }}>Storage key: {storageKey}</span> : null}
+                  {!available ? <span className="muted small">{unavailableArtifactMessage(artifact)}</span> : null}
+                  {available && !downloadUrl ? <span className="muted small">Missing download URL for this artifact.</span> : null}
+                </div>
                 <button
                   type="button"
-                  className="btn"
+                  className="btn btn-secondary"
                   onClick={() => onDownloadArtifact(artifact)}
                   disabled={!downloadable}
                 >
-                  Download {label}
+                  Download
                 </button>
-                <div style={{ marginTop: 8 }}>
-                  <strong>{label}</strong>
-                </div>
-                <div className="muted" style={{ marginTop: 6 }}>{filename}</div>
-                {storageKey ? <div className="muted" style={{ marginTop: 6 }}>Storage key: {storageKey}</div> : null}
-                {!available ? <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div> : null}
-                {available && !downloadUrl ? <div className="muted" style={{ marginTop: 6 }}>Missing download URL for this artifact.</div> : null}
               </div>
             );
           })}
@@ -196,13 +196,16 @@ function DownloadableArtifacts({
     if (docxArtifacts.length) {
       return (
         <>
-          <section className="small">
-            <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
-            <div className="grid" style={{ gap: 8 }}>
+          <section>
+            <h3>Downloadable documents</h3>
+            <div className="stack-sm">
               {docxArtifacts.map((artifact, index) => (
-                <div key={`${artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel" style={{ padding: 12 }}>
-                  <button type="button" className="btn" disabled>{artifactLabel(artifact)}</button>
-                  <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div>
+                <div key={`${artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.storage_key ?? 'docx'}-${index}`} className="panel panel-row">
+                  <div className="stack-sm" style={{ gap: 2 }}>
+                    <strong className="small">{artifactLabel(artifact)}</strong>
+                    <span className="muted small">{unavailableArtifactMessage(artifact)}</span>
+                  </div>
+                  <button type="button" className="btn btn-secondary" disabled>Download</button>
                 </div>
               ))}
             </div>
@@ -216,9 +219,9 @@ function DownloadableArtifacts({
 
     return (
       <>
-        <section className="small">
-          <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
-          <button type="button" className="btn" onClick={() => onDownloadArtifact(fallbackLegacyArtifact(documentId))}>
+        <section>
+          <h3>Downloadable documents</h3>
+          <button type="button" className="btn btn-primary" onClick={() => onDownloadArtifact(fallbackLegacyArtifact(documentId))}>
             Download DOCX - legacy
           </button>
         </section>
@@ -229,9 +232,9 @@ function DownloadableArtifacts({
 
   return (
     <>
-      <section className="small">
-        <h3 style={{ margin: '0 0 8px' }}>Downloadable documents</h3>
-        <div className="grid" style={{ gap: 8 }}>
+      <section>
+        <h3>Downloadable documents</h3>
+        <div className="stack-sm">
           {docxArtifacts.map((artifact, index) => {
             const key = artifact.variant ?? artifact.filename ?? artifact.fileName ?? artifact.file_name ?? artifact.name ?? artifact.download_url ?? artifact.url ?? artifact.storage_key ?? artifact.storageKey ?? `docx-${index}`;
             const label = artifactLabel(artifact);
@@ -240,18 +243,21 @@ function DownloadableArtifacts({
             const downloadUrl = artifactDownloadUrl(artifact);
 
             return (
-              <div key={`${key}-${index}`} className="panel" style={{ padding: 12 }}>
+              <div key={`${key}-${index}`} className="panel panel-row">
+                <div className="stack-sm" style={{ gap: 2, minWidth: 0 }}>
+                  <strong className="small">{label}</strong>
+                  <span className="muted small" style={{ overflowWrap: 'anywhere' }}>{filename}</span>
+                  {!available ? <span className="muted small">{unavailableArtifactMessage(artifact)}</span> : null}
+                  {available && !downloadUrl ? <span className="muted small">Missing download URL for this artifact.</span> : null}
+                </div>
                 <button
                   type="button"
-                  className="btn"
+                  className="btn btn-primary"
                   onClick={() => onDownloadArtifact(artifact)}
                   disabled={!available || !downloadUrl}
                 >
-                  Download {label}
+                  Download
                 </button>
-                <div className="muted" style={{ marginTop: 6 }}>{filename}</div>
-                {!available ? <div className="muted" style={{ marginTop: 6 }}>{unavailableArtifactMessage(artifact)}</div> : null}
-                {available && !downloadUrl ? <div className="muted" style={{ marginTop: 6 }}>Missing download URL for this artifact.</div> : null}
               </div>
             );
           })}
@@ -260,6 +266,14 @@ function DownloadableArtifacts({
       {renderOtherArtifacts()}
     </>
   );
+}
+
+function statusPillClass(status: string | undefined) {
+  const s = (status ?? '').toLowerCase();
+  if (s === 'completed') return 'status-pill status-success';
+  if (s === 'failed' || s === 'expired') return 'status-pill status-danger';
+  if (s) return 'status-pill status-warning';
+  return 'status-pill status-neutral';
 }
 
 function getDownloadFilename(response: Response, originalFilename: string | undefined, documentId: string) {
@@ -479,22 +493,60 @@ export default function DocumentDetailClient() {
         onConfirm={() => { void handleDeleteDocument(); }}
       />
       <div className="card">
-        <h1 style={{ marginTop: 0 }}>Conversion status</h1>
-        {!document ? <p className="small">Loading...</p> : (
-          <div className="grid" style={{ gap: 12 }}>
-            <p className="small"><strong>File:</strong> {document.original_filename}</p>
-            <p className="small"><strong>Status:</strong> {document.document_status}</p>
-            <p className="small"><strong>Job status:</strong> {document.job_status ?? document.latest_job?.job_status ?? '-'}</p>
-            <p className="small"><strong>OCR step:</strong> {document.current_step ?? document.latest_job?.current_step ?? '-'}</p>
-            <p className="small"><strong>OCR provider:</strong> {document.ocr_provider ?? '-'}</p>
-            <p className="small"><strong>Layout mode:</strong> {document.layout_mode ?? '-'}</p>
-            <p className="small"><strong>Pipeline version:</strong> {document.pipeline_version ?? '-'}</p>
-            <p className="small"><strong>DOCX ready:</strong> {document.docx_available ? 'Yes' : 'No'}</p>
-            <p className="small"><strong>Retention deadline:</strong> {document.retention_deadline ?? '-'}</p>
-            <p className="small"><strong>Cleanup status:</strong> {document.cleanup_status ?? '-'}</p>
-            <p className="small"><strong>Error message:</strong> {document.error_message ?? '-'}</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="btn" onClick={handleReprocess} disabled={isReprocessing}>
+        <div className="section-head">
+          <h1 style={{ marginBottom: 0 }}>Conversion status</h1>
+          {document ? <span className={statusPillClass(document.document_status)}>{document.document_status}</span> : null}
+        </div>
+        {!document ? (
+          <p className="small processing-indicator">
+            <span className="spinner" />
+            Loading...
+          </p>
+        ) : (
+          <div className="stack">
+            <p className="small muted" style={{ margin: 0 }}>{document.original_filename}</p>
+
+            <dl className="stat-grid">
+              <div className="stat-cell">
+                <dt>Job status</dt>
+                <dd>{document.job_status ?? document.latest_job?.job_status ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>OCR step</dt>
+                <dd>{document.current_step ?? document.latest_job?.current_step ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>OCR provider</dt>
+                <dd>{document.ocr_provider ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>Layout mode</dt>
+                <dd>{document.layout_mode ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>Pipeline version</dt>
+                <dd>{document.pipeline_version ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>DOCX ready</dt>
+                <dd>{document.docx_available ? 'Yes' : 'No'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>Retention deadline</dt>
+                <dd>{document.retention_deadline ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>Cleanup status</dt>
+                <dd>{document.cleanup_status ?? '-'}</dd>
+              </div>
+              <div className="stat-cell">
+                <dt>Error message</dt>
+                <dd>{document.error_message ?? '-'}</dd>
+              </div>
+            </dl>
+
+            <div className="actions-row">
+              <button type="button" className="btn btn-secondary" onClick={handleReprocess} disabled={isReprocessing}>
                 {isReprocessing ? 'Reprocessing...' : 'Reprocess'}
               </button>
               {document.docx_available && wasDownloaded ? (
@@ -503,22 +555,24 @@ export default function DocumentDetailClient() {
                 </button>
               ) : null}
               {document.qa_report_url ? (
-                <a className="btn" href={document.qa_report_url} target="_blank" rel="noreferrer">Download QA JSON</a>
+                <a className="btn btn-secondary" href={document.qa_report_url} target="_blank" rel="noreferrer">Download QA JSON</a>
               ) : null}
               {irUrl ? (
-                <a className="btn" href={irUrl} target="_blank" rel="noreferrer">Download IR JSON</a>
+                <a className="btn btn-secondary" href={irUrl} target="_blank" rel="noreferrer">Download IR JSON</a>
               ) : null}
             </div>
+
             <DownloadableArtifacts
               documentId={documentId}
               artifacts={document.artifacts}
               docxAvailable={document.docx_available}
               onDownloadArtifact={handleDownloadArtifact}
             />
+
             {document.warnings?.length ? (
-              <div className="small">
-                <strong>Warnings:</strong>
-                <ul style={{ margin: '6px 0 0 20px' }}>
+              <div className="panel small">
+                <strong>Warnings</strong>
+                <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
                   {document.warnings.map((warning, index) => <li key={`${warning}-${index}`}>{warning}</li>)}
                 </ul>
               </div>

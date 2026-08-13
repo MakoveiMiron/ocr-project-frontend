@@ -15,4 +15,58 @@ useEffect(()=>{if(!isAuthenticated)return;void loadDocuments();const i=setInterv
 useEffect(()=>{if(typeof window==='undefined')return;setDownloadedDocumentIds(downloadableDocuments.reduce<Record<string,boolean>>((a,d)=>{a[d.document_id]=window.sessionStorage.getItem(`auto-download-consumed:${d.document_id}`)==='1';return a;},{}))},[downloadableDocuments]);
 useEffect(()=>{if(!toastMessage&&!error&&(!isLoading&&isAuthenticated))return;const t=window.setTimeout(()=>{setToastMessage('');setError('');},3500);return()=>window.clearTimeout(t)},[toastMessage,error,isLoading,isAuthenticated]);
 const [pendingDeleteDocumentId,setPendingDeleteDocumentId]=useState('');const handleDeleteDocument=useCallback(async(id:string)=>{setDeletingDocumentId(id);try{const token=await getOptionalAccessToken();await deleteDocument(id,token);setDownloadableDocuments(c=>c.filter(i=>i.document_id!==id));setDocuments(c=>c.filter(i=>i.id!==id));window.sessionStorage.removeItem(`auto-download-consumed:${id}`);setToastMessage('Document deleted.');setPendingDeleteDocumentId('');}catch(err){let m='Delete failed. Please retry.';if(err instanceof ApiError&&err.status===422)m='Invalid document id.';else if(err instanceof ApiError&&err.status===404)m='Document not found or already deleted.';setError(m);}finally{setDeletingDocumentId('');}},[]);
-return <><Hero /><section className='container page'><ConfirmDialog isOpen={Boolean(pendingDeleteDocumentId)} title='Delete document' description='Delete this document now? This cannot be undone.' confirmLabel='Delete' cancelLabel='Cancel' isBusy={Boolean(deletingDocumentId)} onCancel={()=>{if(!deletingDocumentId)setPendingDeleteDocumentId('');}} onConfirm={()=>{if(pendingDeleteDocumentId)void handleDeleteDocument(pendingDeleteDocumentId);}} /><Toast message={toastMessage||error||(!isAuthenticated&&!isLoading?'You must sign in to upload and convert files.':'')} tone={error||(!isAuthenticated&&!isLoading)?'error':'success'} onClose={()=>{setToastMessage('');setError('');}} /><div className='grid grid-2'><UploadForm onComplete={loadDocuments} isAuthenticated={isAuthenticated} /><div className='card'><h2 className='section-title'>Downloadable files</h2><div className='stack-sm'>{downloadableDocuments.length?downloadableDocuments.map(document=><div key={document.document_id} className='panel' style={{padding:'12px'}}><p className='small'><strong>File:</strong> {document.original_filename}</p><div className='actions-row'><a className='btn btn-secondary' href={`/document?documentId=${document.document_id}`}>View GPMB</a><a className='btn btn-primary' href={`/document?documentId=${document.document_id}&download=1`}>Download DOCX</a>{downloadedDocumentIds[document.document_id]?<button type='button' className='btn btn-danger' onClick={()=>setPendingDeleteDocumentId(document.document_id)} disabled={Boolean(deletingDocumentId)}>Delete</button>:null}</div></div>):<p className='small muted'>Your downloadable files will appear here after OCR processing finishes.</p>}</div></div></div></section></>}
+return (
+    <>
+      <Hero />
+      <section className="container page">
+        <ConfirmDialog
+          isOpen={Boolean(pendingDeleteDocumentId)}
+          title="Delete document"
+          description="Delete this document now? This cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          isBusy={Boolean(deletingDocumentId)}
+          onCancel={() => { if (!deletingDocumentId) setPendingDeleteDocumentId(''); }}
+          onConfirm={() => { if (pendingDeleteDocumentId) void handleDeleteDocument(pendingDeleteDocumentId); }}
+        />
+        <Toast
+          message={toastMessage || error || (!isAuthenticated && !isLoading ? 'You must sign in to upload and convert files.' : '')}
+          tone={error || (!isAuthenticated && !isLoading) ? 'error' : 'success'}
+          onClose={() => { setToastMessage(''); setError(''); }}
+        />
+        <div className="grid grid-2">
+          <UploadForm onComplete={loadDocuments} isAuthenticated={isAuthenticated} />
+          <div className="card">
+            <h2 className="section-title">Downloadable files</h2>
+            <div className="stack-sm">
+              {downloadableDocuments.length ? downloadableDocuments.map((document) => (
+                <div key={document.document_id} className="panel">
+                  <p className="small" style={{ marginBottom: 10 }}><strong>File:</strong> {document.original_filename}</p>
+                  <div className="actions-row">
+                    <a className="btn btn-secondary" href={`/document?documentId=${document.document_id}`}>View GPMB</a>
+                    <a className="btn btn-primary" href={`/document?documentId=${document.document_id}&download=1`}>Download DOCX</a>
+                    {downloadedDocumentIds[document.document_id] ? (
+                      <button type="button" className="btn btn-danger" onClick={() => setPendingDeleteDocumentId(document.document_id)} disabled={Boolean(deletingDocumentId)}>
+                        Delete
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              )) : (
+                <div className="empty-state">
+                  <span className="empty-state-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <path d="M5 3h7l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                      <path d="M12 3v3h3" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <p className="small muted" style={{ margin: 0 }}>Your downloadable files will appear here after OCR processing finishes.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

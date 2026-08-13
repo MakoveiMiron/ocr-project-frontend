@@ -34,17 +34,20 @@ export function PlanCard({ plan, isAuthenticated }: { plan: Plan; isAuthenticate
     }
   }
 
+  const isFeatured = plan.code === 'pro';
+
   return (
-    <div className="card">
-      <h3 style={{ marginTop: 0 }}>{plan.name}</h3>
-      <p style={{ fontSize: 28, margin: '10px 0 14px' }}>{plan.priceLabel}</p>
-      <ul className="small">
+    <div className={`card plan-card${isFeatured ? ' featured' : ''}`}>
+      {isFeatured ? <span className="plan-badge">Popular</span> : null}
+      <h3>{plan.name}</h3>
+      <p className="plan-price">{plan.priceLabel}</p>
+      <ul className="feature-list">
         {plan.limits.map((limit) => <li key={limit}>{limit}</li>)}
       </ul>
-      <button className="btn btn-primary" style={{ marginTop: 16, width: '100%' }} onClick={handleSelectPlan} disabled={busy}>
+      <button className={`btn btn-block${isFeatured ? ' btn-primary' : ' btn-secondary'}`} onClick={handleSelectPlan} disabled={busy}>
         {busy ? 'Loading...' : 'Choose plan'}
       </button>
-      {error ? <p className="small" style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</p> : null}
+      {error ? <p className="small" style={{ color: 'var(--danger)' }}>{error}</p> : null}
     </div>
   );
 }

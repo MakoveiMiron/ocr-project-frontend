@@ -17,8 +17,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <section className="container" style={{ paddingBottom: 40 }}>
-        <div className="card"><p className="small">Checking authentication…</p></div>
+      <section className="container page">
+        <div className="card">
+          <p className="small processing-indicator">
+            <span className="spinner" />
+            Checking authentication…
+          </p>
+        </div>
       </section>
     );
   }

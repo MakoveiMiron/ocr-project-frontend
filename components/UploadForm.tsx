@@ -14,6 +14,20 @@ import { getOptionalAccessToken } from '@/lib/auth';
 type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 type LayoutMode = 'fixed' | 'flow';
 
+function UploadIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 16.5v1A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-1"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 type FileJobState = {
   fileName: string;
   stage: UploadStage;
@@ -188,12 +202,17 @@ export function UploadForm({
       </p>
 
       <div className="dropzone">
-        <input
-          className="input"
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/tiff,image/webp,image/bmp"
-          onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-        />
+        <span className="dropzone-icon" aria-hidden="true">
+          <UploadIcon />
+        </span>
+        <div className="dropzone-body">
+          <input
+            className="input"
+            type="file"
+            accept="application/pdf,image/jpeg,image/png,image/tiff,image/webp,image/bmp"
+            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+          />
+        </div>
       </div>
 
       <fieldset className="field layout-mode-field" disabled={isBusy}>

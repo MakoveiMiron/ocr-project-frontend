@@ -48,9 +48,12 @@ function LoginCallbackContent() {
     <>
       <Toast message={message} tone={message ? (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'error' : 'info') : 'info'} onClose={() => setMessage('')} />
     <section className="container page">
-      <div className="card" style={{ maxWidth: 680 }}>
-        <h1 style={{ marginTop: 0 }}>OIDC callback</h1>
-        <p className="small">{message}</p>
+      <div className="card auth-card">
+        <div className="actions-row" style={{ marginBottom: 10 }}>
+          {!failed ? <span className="spinner" /> : null}
+          <h1 style={{ margin: 0 }}>OIDC callback</h1>
+        </div>
+        <p className="small muted">{message}</p>
         {failed ? <Link className="btn btn-primary" href="/login">Back to sign in</Link> : null}
       </div>
     </section>
@@ -60,7 +63,7 @@ function LoginCallbackContent() {
 
 export default function LoginCallbackPage() {
   return (
-    <Suspense fallback={<section className="container"><p className="small">Loading callback…</p></section>}>
+    <Suspense fallback={<section className="container page"><p className="small muted">Loading callback…</p></section>}>
       <LoginCallbackContent />
     </Suspense>
   );

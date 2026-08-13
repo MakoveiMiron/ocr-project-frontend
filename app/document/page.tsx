@@ -5,7 +5,7 @@ import DocumentDetailClient from '@/app/document/DocumentDetailClient';
 export default function DocumentPage() {
   return (
     <ProtectedRoute>
-      <Suspense fallback={<section className="container"><p className="small">Loading...</p></section>}>
+      <Suspense fallback={<section className="container page"><p className="small muted">Loading...</p></section>}>
         <DocumentDetailClient />
       </Suspense>
     </ProtectedRoute>
