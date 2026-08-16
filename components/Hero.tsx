@@ -17,40 +17,35 @@ export function Hero() {
 
   return (
     <section className="hero container">
-      <div className="hero-grid">
-        <div className="hero-copy stack">
-          <div className="eyebrow">OCR document conversion</div>
-          <h1>
-            Convert PDFs into <span className="text-gradient">editable DOCX</span> without the clutter
-          </h1>
-          <p className="muted">
-            Built for reliable OCR throughput with clean outputs, transparent status tracking, and account-level file
-            history.
-          </p>
-          {!isAuthenticated && !isLoading ? (
-            <div className="actions-row">
-              <Link className="btn btn-primary" href="/register">
-                Start free
-              </Link>
-              <Link className="btn btn-secondary" href="/login">
-                Sign in
-              </Link>
-            </div>
-          ) : null}
-        </div>
-        <div className="hero-card">
-          <h3 className="section-title">Why teams choose this workflow</h3>
-          <div>
-            {FEATURES.map((feature) => (
-              <p className="feature-check" key={feature}>
-                <span className="feature-check-icon">
-                  <CheckIcon />
-                </span>
-                {feature}
-              </p>
-            ))}
+      <div className="hero-copy">
+        <p className="eyebrow">OCR document conversion</p>
+        <h1>
+          Convert PDFs into <span className="text-gradient">editable DOCX</span> without the clutter
+        </h1>
+        <p className="muted hero-lede">
+          Built for reliable OCR throughput with clean outputs, transparent status tracking, and account-level file
+          history.
+        </p>
+        {!isAuthenticated && !isLoading ? (
+          <div className="actions-row">
+            <Link className="btn btn-primary" href="/register">
+              Start free
+            </Link>
+            <Link className="btn btn-secondary" href="/login">
+              Sign in
+            </Link>
           </div>
-        </div>
+        ) : null}
+      </div>
+      <div className="hero-features">
+        {FEATURES.map((feature) => (
+          <div className="feature-check" key={feature}>
+            <span className="feature-check-icon">
+              <CheckIcon />
+            </span>
+            {feature}
+          </div>
+        ))}
       </div>
     </section>
   );

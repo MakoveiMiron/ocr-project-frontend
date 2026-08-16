@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Toast } from '@/components/Toast';
 import {
@@ -10,13 +10,14 @@ import {
   uploadDocumentBinary
 } from '@/lib/api';
 import { getOptionalAccessToken } from '@/lib/auth';
+import { useUploadState } from '@/lib/uploadState';
 
-type UploadStage = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
-type LayoutMode = 'fixed' | 'flow';
+const ACCEPTED_FILE_TYPES = 'application/pdf,image/jpeg,image/png,image/tiff,image/webp,image/bmp';
+const ACCEPTED_MIME_TYPES = ACCEPTED_FILE_TYPES.split(',');
 
-function UploadIcon() {
+function UploadIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 16.5v1A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-1"
         stroke="currentColor"
@@ -28,25 +29,30 @@ function UploadIcon() {
   );
 }
 
-type FileJobState = {
-  fileName: string;
-  stage: UploadStage;
-  message: string;
-};
+function isFileDrag(event: DragEvent) {
+  return Array.from(event.dataTransfer?.types ?? []).includes('Files');
+}
 
 export function UploadForm({
   onComplete,
-  isAuthenticated
+  isAuthenticated,
+  isLoading = false
 }: {
   onComplete?: () => Promise<void> | void;
   isAuthenticated: boolean;
+  isLoading?: boolean;
 }) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [message, setMessage] = useState('');
-  const [isBusy, setIsBusy] = useState(false);
-  const [stage, setStage] = useState<UploadStage>('idle');
-  const [fileStatuses, setFileStatuses] = useState<FileJobState[]>([]);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('fixed');
+  const {
+    files, setFiles,
+    message, setMessage,
+    isBusy, setIsBusy,
+    stage, setStage,
+    fileStatuses, setFileStatuses,
+    layoutMode, setLayoutMode
+  } = useUploadState();
+
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragDepthRef = useRef(0);
 
   useEffect(() => {
     if (!message) return;
@@ -57,6 +63,56 @@ export function UploadForm({
 
     return () => clearTimeout(timeout);
   }, [message]);
+
+  // Let a file be dropped anywhere on the page, not just onto the small
+  // dropzone, and surface a full-page layer while the drag is in progress.
+  useEffect(() => {
+    function handleDragEnter(event: DragEvent) {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      dragDepthRef.current += 1;
+      setIsDragActive(true);
+    }
+
+    function handleDragOver(event: DragEvent) {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+    }
+
+    function handleDragLeave(event: DragEvent) {
+      if (!isFileDrag(event)) return;
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+      if (dragDepthRef.current === 0) setIsDragActive(false);
+    }
+
+    function handleDrop(event: DragEvent) {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      dragDepthRef.current = 0;
+      setIsDragActive(false);
+
+      const dropped = Array.from(event.dataTransfer?.files ?? []);
+      const accepted = dropped.filter((file) => ACCEPTED_MIME_TYPES.includes(file.type));
+
+      if (accepted.length) {
+        setFiles(accepted);
+      } else if (dropped.length) {
+        setMessage('Unsupported file type. Please drop a PDF or image file.');
+      }
+    }
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [setFiles, setMessage]);
 
   async function wait(ms: number) {
     await new Promise((resolve) => setTimeout(resolve, ms));
@@ -183,7 +239,7 @@ export function UploadForm({
       <Toast
         message={
           message ||
-          (!isAuthenticated ? 'Please sign in before converting files.' : '')
+          (!isAuthenticated && !isLoading ? 'Please sign in before converting files.' : '')
         }
         tone={
           stage === 'failed' || !isAuthenticated
@@ -209,9 +265,14 @@ export function UploadForm({
           <input
             className="input"
             type="file"
-            accept="application/pdf,image/jpeg,image/png,image/tiff,image/webp,image/bmp"
+            accept={ACCEPTED_FILE_TYPES}
             onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
           />
+          {files.length && !isBusy ? (
+            <p className="small muted" style={{ margin: 0 }}>
+              Selected: {files.map((file) => file.name).join(', ')}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -266,6 +327,18 @@ export function UploadForm({
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {isDragActive ? (
+        <div className="drop-overlay" role="presentation">
+          <div className="drop-overlay-panel">
+            <span className="drop-overlay-icon" aria-hidden="true">
+              <UploadIcon size={30} />
+            </span>
+            <p className="drop-overlay-title">Drop to convert</p>
+            <p className="drop-overlay-subtitle small">Release your PDF or image anywhere on this page</p>
+          </div>
+        </div>
       ) : null}
     </div>
   );

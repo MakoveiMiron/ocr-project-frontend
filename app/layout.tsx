@@ -2,6 +2,7 @@ import './globals.css';
 import Link from 'next/link';
 import { NavAuth } from '@/components/NavAuth';
 import { NavLinks } from '@/components/NavLinks';
+import { UploadStateProvider } from '@/lib/uploadState';
 
 export const metadata = {
   title: 'flowCR',
@@ -16,12 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="dark">
       <body>
         <div className="app-shell">
-          <div className="container">
-            <nav className="topnav">
+          <header className="topnav-wrap">
+            <nav className="container topnav">
               <Link href="/" className="brand" aria-label="flowCR home">
-                <span className="brand-mark">
-                  <img src="/branding/nav-logo.png" alt="flowCR" className="brand-logo" />
-                </span>
+                <img src="/branding/nav-logo.png" alt="flowCR" className="brand-logo" />
               </Link>
               <div className="nav-links">
                 <NavLinks />
@@ -29,14 +28,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <NavAuth />
               </div>
             </nav>
-          </div>
-          {children}
+          </header>
+          <UploadStateProvider>{children}</UploadStateProvider>
           <footer className="site-footer">
             <div className="container site-footer-inner">
-              <span className="footer-brand">
-                <span className="brand-dot" aria-hidden="true" />
-                flowCR
-              </span>
+              <span className="footer-brand">flowCR</span>
               <span className="footer-note">Scanned documents, converted to clean, editable DOCX.</span>
             </div>
           </footer>

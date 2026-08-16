@@ -8,9 +8,51 @@ import { deleteDocument, ApiError, fetchDocumentDetail, fetchDocuments } from '@
 import { getOptionalAccessToken } from '@/lib/auth';
 import { DocumentDetail, DocumentSummary } from '@/lib/types';
 import { useAuthStatus } from '@/lib/useAuthStatus';
+
+const DOWNLOADABLE_CACHE_KEY = 'flowcr:downloadable-documents';
+
+function readCachedDownloadableDocuments(): DocumentDetail[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(DOWNLOADABLE_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as DocumentDetail[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function HomePage(){const [documents,setDocuments]=useState<DocumentSummary[]>([]);const [downloadableDocuments,setDownloadableDocuments]=useState<DocumentDetail[]>([]);const [error,setError]=useState('');const [toastMessage,setToastMessage]=useState('');const [deletingDocumentId,setDeletingDocumentId]=useState('');const [downloadedDocumentIds,setDownloadedDocumentIds]=useState<Record<string, boolean>>({});const {isAuthenticated,isLoading}=useAuthStatus();const detailCacheRef=useRef<Record<string,{detail?:DocumentDetail;docxAvailable:boolean;lastCheckedAt:number}>>({});
-const loadDownloadableDocuments=useCallback(async(docs:DocumentSummary[])=>{const completed=docs.filter(d=>d.status==='completed').sort((a,b)=>b.id.localeCompare(a.id));const downloadable:DocumentDetail[]=[];const now=Date.now();for(const doc of completed){const cached=detailCacheRef.current[doc.id];if(cached?.docxAvailable&&cached.detail){downloadable.push(cached.detail);continue;}if(cached&&!cached.docxAvailable&&now-cached.lastCheckedAt<60000)continue;try{const detail=await fetchDocumentDetail(doc.id);detailCacheRef.current[doc.id]={detail,docxAvailable:detail.docx_available,lastCheckedAt:now};if(detail.docx_available)downloadable.push(detail);}catch{}}setDownloadableDocuments(downloadable);},[]);
+  // Merge fresh results into the existing list instead of replacing it, so a
+  // remount (e.g. navigating away and back) or a transient fetch failure
+  // doesn't wipe out documents we already know are downloadable.
+  const loadDownloadableDocuments=useCallback(async(docs:DocumentSummary[])=>{
+    const completed=docs.filter(d=>d.status==='completed').sort((a,b)=>b.id.localeCompare(a.id));
+    const completedIds=new Set(completed.map(d=>d.id));
+    const now=Date.now();
+    setDownloadableDocuments((previous)=>previous.filter((d)=>completedIds.has(d.document_id)));
+    for(const doc of completed){
+      const cached=detailCacheRef.current[doc.id];
+      if(cached?.docxAvailable&&cached.detail)continue;
+      if(cached&&!cached.docxAvailable&&now-cached.lastCheckedAt<60000)continue;
+      try{
+        const detail=await fetchDocumentDetail(doc.id);
+        detailCacheRef.current[doc.id]={detail,docxAvailable:detail.docx_available,lastCheckedAt:now};
+        setDownloadableDocuments((previous)=>{
+          const withoutCurrent=previous.filter((d)=>d.document_id!==detail.document_id);
+          const next=detail.docx_available?[...withoutCurrent,detail]:withoutCurrent;
+          return next.sort((a,b)=>b.document_id.localeCompare(a.document_id));
+        });
+      }catch{
+        // Transient failure - keep whatever we already knew about this document.
+      }
+    }
+  },[]);
 const loadDocuments=useCallback(async()=>{if(!isAuthenticated){setDocuments([]);setDownloadableDocuments([]);detailCacheRef.current={};return;}try{const docs=await fetchDocuments();setDocuments(docs);await loadDownloadableDocuments(docs);setError('');}catch(err){setError(err instanceof Error?err.message:'Could not load conversions.');}},[isAuthenticated,loadDownloadableDocuments]);
+// Restore the last known downloadable list immediately on mount (before the
+// network round-trip resolves) so it doesn't flash empty when this page
+// remounts after client-side navigation.
+useEffect(()=>{if(!isAuthenticated)return;setDownloadableDocuments(readCachedDownloadableDocuments())},[isAuthenticated]);
+useEffect(()=>{if(typeof window==='undefined')return;if(downloadableDocuments.length)window.sessionStorage.setItem(DOWNLOADABLE_CACHE_KEY,JSON.stringify(downloadableDocuments));else window.sessionStorage.removeItem(DOWNLOADABLE_CACHE_KEY)},[downloadableDocuments]);
 useEffect(()=>{if(!isAuthenticated)return;void loadDocuments();const i=setInterval(()=>void loadDocuments(),15000);return()=>clearInterval(i)},[isAuthenticated,loadDocuments]);
 useEffect(()=>{if(typeof window==='undefined')return;setDownloadedDocumentIds(downloadableDocuments.reduce<Record<string,boolean>>((a,d)=>{a[d.document_id]=window.sessionStorage.getItem(`auto-download-consumed:${d.document_id}`)==='1';return a;},{}))},[downloadableDocuments]);
 useEffect(()=>{if(!toastMessage&&!error&&(!isLoading&&isAuthenticated))return;const t=window.setTimeout(()=>{setToastMessage('');setError('');},3500);return()=>window.clearTimeout(t)},[toastMessage,error,isLoading,isAuthenticated]);
@@ -35,7 +77,7 @@ return (
           onClose={() => { setToastMessage(''); setError(''); }}
         />
         <div className="grid grid-2">
-          <UploadForm onComplete={loadDocuments} isAuthenticated={isAuthenticated} />
+          <UploadForm onComplete={loadDocuments} isAuthenticated={isAuthenticated} isLoading={isLoading} />
           <div className="card">
             <h2 className="section-title">Downloadable files</h2>
             <div className="stack-sm">
